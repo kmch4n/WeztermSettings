@@ -105,7 +105,7 @@ end)
 config.automatically_reload_config = true
 
 -- 新しく開くターミナルでは Windows PowerShell を起動し、起動バナーは表示しません。
-config.default_prog = { "powershell.exe", "-NoLogo" }
+config.default_prog = { "pwsh.exe", "-NoLogo" }
 
 -- 起動時の作業ディレクトリは local.lua 側で上書きできます。
 if not config.default_cwd then
