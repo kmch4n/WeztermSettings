@@ -29,7 +29,7 @@ local function get_tab_title(tab_info)
 
     title = tab_info.active_pane.title
 
-    if title == "powershell.exe" or title == "pwsh.exe" or title == "Windows PowerShell" then
+    if title == "powershell.exe" or title == "pwsh.exe" or title == "Windows PowerShell" or title == "codex.exe" then
         return "Terminal"
     end
 
