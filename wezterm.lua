@@ -54,6 +54,37 @@ local function build_startup_spawn_command(cmd, cwd)
     return spawn
 end
 
+local function build_launch_menu(wsl_domains)
+    local launch_menu = {
+        {
+            label = "PowerShell 7",
+            domain = { DomainName = "local" },
+            args = { "pwsh.exe", "-NoLogo" },
+        },
+        {
+            label = "Windows PowerShell",
+            domain = { DomainName = "local" },
+            args = { "powershell.exe", "-NoLogo" },
+        },
+        {
+            label = "Command Prompt",
+            domain = { DomainName = "local" },
+            args = { "cmd.exe" },
+        },
+    }
+
+    for _, domain in ipairs(wsl_domains) do
+        table.insert(launch_menu, {
+            label = domain.name,
+            domain = { DomainName = domain.name },
+        })
+    end
+
+    return launch_menu
+end
+
+local wsl_domains = wezterm.default_wsl_domains()
+
 local function copy_if_selected_or_send_ctrl_c(window, pane)
     local has_selection = window:get_selection_text_for_pane(pane) ~= ""
 
@@ -113,6 +144,10 @@ if not config.default_cwd then
 end
 
 -- タブ番号の接頭辞を消し、名前だけをタブバーに表示します。
+config.wsl_domains = wsl_domains
+config.launch_menu = build_launch_menu(wsl_domains)
+config.scrollback_lines = 10000
+config.switch_to_last_active_tab_when_closing_tab = true
 config.show_tab_index_in_tab_bar = false
 
 ----------------------------------------------------
@@ -124,6 +159,13 @@ config.show_tab_index_in_tab_bar = false
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
+    {
+        key = "F3",
+        mods = "NONE",
+        action = act.ShowLauncherArgs({
+            flags = "FUZZY|LAUNCH_MENU_ITEMS|TABS|WORKSPACES|DOMAINS",
+        }),
+    },
     {
         key = "c",
         mods = "CTRL",
