@@ -1,0 +1,6 @@
+# AI
+.codex/
+.claude/
+
+# local files
+local.lua
