@@ -54,6 +54,30 @@ local function build_startup_spawn_command(cmd, cwd)
     return spawn
 end
 
+local function copy_if_selected_or_send_ctrl_c(window, pane)
+    local has_selection = window:get_selection_text_for_pane(pane) ~= ""
+
+    if has_selection then
+        window:perform_action(act.CopyTo("Clipboard"), pane)
+        window:perform_action(act.ClearSelection, pane)
+        return
+    end
+
+    window:perform_action(act.SendKey({ key = "c", mods = "CTRL" }), pane)
+end
+
+local function copy_if_selected_or_paste(window, pane)
+    local has_selection = window:get_selection_text_for_pane(pane) ~= ""
+
+    if has_selection then
+        window:perform_action(act.CopyTo("Clipboard"), pane)
+        window:perform_action(act.ClearSelection, pane)
+        return
+    end
+
+    window:perform_action(act.PasteFrom("Clipboard"), pane)
+end
+
 -- WezTerm を起動したとき、最初のウィンドウに 2 つのタブを開きます。
 -- 1 つ目のタブ名は Dev、2 つ目のタブ名は Agent に固定します。
 wezterm.on("gui-startup", function(cmd)
@@ -100,6 +124,25 @@ config.show_tab_index_in_tab_bar = false
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
+    {
+        key = "c",
+        mods = "CTRL",
+        action = wezterm.action_callback(copy_if_selected_or_send_ctrl_c),
+    },
+    { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
+}
+
+config.mouse_bindings = {
+    {
+        event = { Down = { streak = 1, button = "Right" } },
+        mods = "NONE",
+        action = act.Nop,
+    },
+    {
+        event = { Up = { streak = 1, button = "Right" } },
+        mods = "NONE",
+        action = wezterm.action_callback(copy_if_selected_or_paste),
+    },
 }
 
 ----------------------------------------------------
