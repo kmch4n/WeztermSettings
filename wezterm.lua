@@ -1,7 +1,6 @@
 -- WezTerm の API を読み込みます。
 local wezterm = require("wezterm")
 local act = wezterm.action
-local mux = wezterm.mux
 
 -- 設定を書き込むためのオブジェクトを作成します。
 local config = wezterm.config_builder()
@@ -41,18 +40,6 @@ end
 wezterm.on("format-tab-title", function(tab)
     return get_tab_title(tab)
 end)
-
-local function build_startup_spawn_command(cmd, cwd)
-    local spawn = {
-        cwd = cwd,
-    }
-
-    if cmd and cmd.args then
-        spawn.args = cmd.args
-    end
-
-    return spawn
-end
 
 local function build_launch_menu(wsl_domains)
     local launch_menu = {
@@ -108,19 +95,6 @@ local function copy_if_selected_or_paste(window, pane)
 
     window:perform_action(act.PasteFrom("Clipboard"), pane)
 end
-
--- WezTerm を起動したとき、最初のウィンドウに 2 つのタブを開きます。
--- 1 つ目のタブ名は Dev、2 つ目のタブ名は Agent に固定します。
-wezterm.on("gui-startup", function(cmd)
-    local spawn = build_startup_spawn_command(cmd, config.default_cwd)
-    local dev_tab, _, window = mux.spawn_window(spawn)
-    dev_tab:set_title("Dev")
-
-    local agent_tab, _, _ = window:spawn_tab({
-        cwd = config.default_cwd,
-    })
-    agent_tab:set_title("Agent")
-end)
 
 ----------------------------------------------------
 -- Reference
