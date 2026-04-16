@@ -29,7 +29,14 @@ local function get_tab_title(tab_info)
 
     title = tab_info.active_pane.title
 
-    if title == "powershell.exe" or title == "pwsh.exe" or title == "Windows PowerShell" or title == "codex.exe" then
+    local normalized_title = title:lower()
+
+    if normalized_title == "windows powershell"
+        or normalized_title:find("powershell.exe", 1, true)
+        or normalized_title:find("pwsh.exe", 1, true)
+        or normalized_title:find("cmd.exe", 1, true)
+        or normalized_title:find("codex.exe", 1, true)
+    then
         return "Terminal"
     end
 
