@@ -116,6 +116,9 @@ end
 -- 設定ファイルを保存したら、自動で再読み込みします。
 config.automatically_reload_config = true
 
+-- ウィンドウを閉じる際の確認ダイアログを表示しません。
+config.window_close_confirmation = "NeverPrompt"
+
 -- 新しく開くターミナルでは Windows PowerShell を起動し、起動バナーは表示しません。
 config.default_prog = { "pwsh.exe", "-NoLogo" }
 
@@ -152,6 +155,7 @@ config.keys = {
         mods = "CTRL",
         action = wezterm.action_callback(copy_if_selected_or_send_ctrl_c),
     },
+    { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = true }) },
     { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
 }
 
