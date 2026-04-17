@@ -103,6 +103,43 @@ local function copy_if_selected_or_paste(window, pane)
     window:perform_action(act.PasteFrom("Clipboard"), pane)
 end
 
+local function basename(path)
+    if not path or path == "" then
+        return nil
+    end
+
+    return path:match("([^/\\]+)$")
+end
+
+local function is_ai_cli_process(pane)
+    local process_name = basename(pane:get_foreground_process_name())
+    if not process_name then
+        return false
+    end
+
+    process_name = process_name:lower()
+
+    return process_name == "codex"
+        or process_name == "codex.exe"
+        or process_name == "claude"
+        or process_name == "claude.exe"
+end
+
+local function send_key_for_current_process(window, pane, ai_key, ai_mods, default_key, default_mods)
+    local target_key = default_key
+    local target_mods = default_mods
+
+    if is_ai_cli_process(pane) then
+        target_key = ai_key
+        target_mods = ai_mods
+    end
+
+    window:perform_action(act.SendKey({
+        key = target_key,
+        mods = target_mods,
+    }), pane)
+end
+
 ----------------------------------------------------
 -- Reference
 ----------------------------------------------------
@@ -143,6 +180,20 @@ config.show_tab_index_in_tab_bar = false
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
+    {
+        key = "Enter",
+        mods = "NONE",
+        action = wezterm.action_callback(function(window, pane)
+            send_key_for_current_process(window, pane, "j", "CTRL", "Enter", "NONE")
+        end),
+    },
+    {
+        key = "Enter",
+        mods = "CTRL",
+        action = wezterm.action_callback(function(window, pane)
+            send_key_for_current_process(window, pane, "Enter", "NONE", "Enter", "CTRL")
+        end),
+    },
     {
         key = "F3",
         mods = "NONE",
