@@ -1,9 +1,9 @@
 # WezTerm Settings
 
-個人用の WezTerm 設定です。Windows 上でのローカル開発を前提に、次の方針で調整しています。
+個人用の WezTerm 設定です。Windows と macOS の両方で同じ運用感になるように、次の方針で調整しています。
 
 - タブタイトルを見やすくする
-- PowerShell / WSL / Command Prompt を launcher から開けるようにする
+- OS ごとの主要 shell を launcher から開けるようにする
 - 右クリックのコピー/ペースト挙動をシンプルにする
 - Codex / Claude 実行中だけ `Enter` 系の入力を入れ替える
 - ローカル環境依存の値は `local.lua` に逃がす
@@ -22,13 +22,17 @@
 
 ## 現在の主な設定
 
-- 既定シェルは `pwsh.exe -NoLogo`
+- Windows では既定シェルを `pwsh.exe -NoLogo` に固定
+- macOS では WezTerm 既定の login shell をそのまま使用
+- 起動サイズは `local.lua` の `initial_cols` / `initial_rows` で環境ごとに上書き可能
 - `Ctrl + LeftArrow` / `Ctrl + RightArrow` でタブ移動
 - `F3` で launcher を表示
+- Windows の launcher では PowerShell / Command Prompt / WSL を表示
+- macOS の launcher では login shell と標準 shell を表示
 - 右クリックは「選択があればコピー、なければ貼り付け」
 - ウィンドウ close ボタンは確認なし
 - `Ctrl + Shift + W` でのタブ close は確認あり
-- タブタイトルの `powershell.exe` / `pwsh.exe` / `cmd.exe` / `codex.exe` は `Terminal` 表示に寄せる
+- タブタイトルの shell 名や `codex` / `claude` は `Terminal` 表示に寄せる
 - `codex` / `claude` 系 process が foreground のときだけ
   - `Enter` を `Ctrl + J`
   - `Ctrl + Enter` を通常の `Enter`
@@ -36,7 +40,7 @@
 ## セットアップ
 
 1. `local.example.lua` を `local.lua` としてコピーする
-2. 必要なら `default_cwd` などをローカル環境に合わせて変更する
+2. 必要なら `default_cwd`、`initial_cols`、`initial_rows` などをローカル環境に合わせて変更する
 3. WezTerm を再読み込みする
 
 ## Docs

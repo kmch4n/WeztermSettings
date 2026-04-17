@@ -24,6 +24,9 @@ WezTerm 公式ドキュメントのリンク集です。確認日は 2026-04-15 
 - `wezterm.home_dir`
   - <https://wezterm.org/config/lua/wezterm/home_dir.html>
   - ユーザーのホームディレクトリを表す定数であることを確認できます。
+- `wezterm.target_triple`
+  - <https://wezterm.org/config/lua/wezterm/target_triple.html>
+  - 実行中 platform の target triple を見て、OS ごとの設定分岐に使えることを確認できます。
 
 ## イベント
 
@@ -43,12 +46,18 @@ WezTerm 公式ドキュメントのリンク集です。確認日は 2026-04-15 
 - `default_prog`
   - <https://wezterm.org/config/lua/config/default_prog.html>
   - コマンドと引数を配列で指定する設定であることを確認できます。
+- Launching Programs
+  - <https://wezterm.org/config/launch.html>
+  - `default_prog` を設定しない Posix 系では、WezTerm が login shell を起動することを確認できます。
 - `show_tab_index_in_tab_bar`
   - <https://wezterm.org/config/lua/config/show_tab_index_in_tab_bar.html>
   - タブ番号プレフィックスの表示有無を制御する設定であることを確認できます。
 - `window_decorations`
   - <https://wezterm.org/config/lua/config/window_decorations.html>
   - タイトルバーとリサイズ境界をフラグで制御する設定であることを確認できます。
+- `integrated_title_button_alignment`
+  - <https://wezterm.org/config/lua/config/integrated_title_button_alignment.html>
+  - 統合タイトルボタンの左右位置を制御できることを確認できます。
 - `integrated_title_button_style`
   - <https://wezterm.org/config/lua/config/integrated_title_button_style.html>
   - `INTEGRATED_BUTTONS|RESIZE` 使用時のボタン見た目を制御する設定であることを確認できます。

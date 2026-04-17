@@ -11,7 +11,7 @@
   - `local.lua` が存在する場合は、そのテーブルを `config` に上書き適用します。
 - `local.lua`
   - マシン依存の上書き用です。
-  - 現在は `default_cwd` のみを持ちます。
+  - 現在は `default_cwd`、`initial_cols`、`initial_rows` を持てます。
 - `local.example.lua`
   - `local.lua` の雛形です。
 
@@ -25,27 +25,30 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 
 - `wezterm.config_builder()` を使って設定オブジェクトを作成しています。
 - `local.lua` が読める場合は、そのキーを共通設定に上書きしています。
+- `wezterm.target_triple` を見て、Windows と macOS の分岐に使っています。
 
 ### 起動時のイベント
 
 - `format-tab-title`
   - 明示的なタブタイトルがあればそれを優先します。
   - そうでなければアクティブ pane のタイトルを使います。
-  - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`codex.exe` を含むタイトルは `Terminal` に置き換えます。
+  - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`zsh`、`bash`、`sh`、`fish`、`codex`、`claude` などの既定タイトルは `Terminal` に置き換えます。
 
 ### 起動・既定値
 
 - `automatically_reload_config = true`
   - 保存時に自動再読み込みします。
-- `default_prog = { "pwsh.exe", "-NoLogo" }`
-  - 新規 pane の既定プログラムは PowerShell 7 です。
+- `default_prog`
+  - Windows では `pwsh.exe -NoLogo` を既定プログラムにします。
+  - macOS では設定せず、WezTerm 既定の login shell 起動に任せます。
 - `default_cwd`
   - `local.lua` 側で上書きしない場合は `wezterm.home_dir` を使います。
   - 現在の `local.lua` ではローカルの開発用ディレクトリを設定しています。
 - `launch_menu`
-  - PowerShell 7、Windows PowerShell、Command Prompt、WSL domain を launcher から開けます。
+  - Windows では PowerShell 7、Windows PowerShell、Command Prompt、WSL domain を launcher から開けます。
+  - macOS では login shell と `/bin/zsh`、`/bin/bash`、`/bin/sh` を launcher から開けます。
 - `wsl_domains`
-  - `wezterm.default_wsl_domains()` の結果をそのまま取り込みます。
+  - Windows でのみ `wezterm.default_wsl_domains()` の結果を取り込みます。
 - `scrollback_lines = 10000`
 - `switch_to_last_active_tab_when_closing_tab = true`
 - `show_tab_index_in_tab_bar = false`
@@ -83,13 +86,18 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 ### ウィンドウ
 
 - `initial_cols = 120`
+  - `local.lua` 側で上書きしない場合の既定値です。
   - 新規ウィンドウの初期幅を 120 桁にします。
 - `initial_rows = 28`
+  - `local.lua` 側で上書きしない場合の既定値です。
   - 新規ウィンドウの初期高さを 28 行にします。
 - `window_decorations = "INTEGRATED_BUTTONS|RESIZE"`
   - タイトルバーを消しつつ、統合ボタンとリサイズ境界を維持します。
-- `integrated_title_button_style = "Windows"`
-  - 統合タイトルボタンを Windows 風にします。
+- `integrated_title_button_alignment`
+  - macOS では `Left` にして、ネイティブ位置でボタンを見せます。
+- `integrated_title_button_style`
+  - Windows では `Windows` を使います。
+  - macOS では `MacOsNative` を使います。
 
 ### 外観
 
@@ -101,4 +109,5 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 
 - `local.lua` は Git 管理しない前提です。
 - 新しいマシンで使うときは `local.example.lua` をコピーして `local.lua` を作れば十分です。
+- 起動サイズをマシンごとに変えたい場合は `local.lua` の `initial_cols` / `initial_rows` を調整します。
 - 共有設定を増やす場合はまず `wezterm.lua` に書き、ローカル差分だけを `local.lua` に残します。
