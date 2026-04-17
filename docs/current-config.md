@@ -11,7 +11,7 @@
   - `local.lua` が存在する場合は、そのテーブルを `config` に上書き適用します。
 - `local.lua`
   - マシン依存の上書き用です。
-  - 現在は `default_cwd` のみを持ち、既定値は `wezterm.home_dir` です。
+  - 現在は `default_cwd` のみを持ちます。
 - `local.example.lua`
   - `local.lua` の雛形です。
 
@@ -31,23 +31,27 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 - `format-tab-title`
   - 明示的なタブタイトルがあればそれを優先します。
   - そうでなければアクティブ pane のタイトルを使います。
-  - PowerShell 系の既定タイトルはタブバー上で `Terminal` に置き換えます。
-- `gui-startup`
-  - GUI 起動時に最初のウィンドウを生成します。
-  - 最初のタブタイトルを `Dev`、2 つ目のタブタイトルを `Agent` に固定します。
-  - このイベント内で pane を生成しているため、通常の `default_prog` よりこちらの起動処理が優先されます。
+  - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`codex.exe` を含むタイトルは `Terminal` に置き換えます。
 
 ### 起動・既定値
 
 - `automatically_reload_config = true`
   - 保存時に自動再読み込みします。
-- `default_prog = { "powershell.exe", "-NoLogo" }`
-  - 新規 pane の既定プログラムは Windows PowerShell です。
+- `default_prog = { "pwsh.exe", "-NoLogo" }`
+  - 新規 pane の既定プログラムは PowerShell 7 です。
 - `default_cwd`
   - `local.lua` 側で上書きしない場合は `wezterm.home_dir` を使います。
-  - 現在の `local.lua` でも `wezterm.home_dir` を設定しているため、実効値はホームディレクトリです。
+  - 現在の `local.lua` ではローカルの開発用ディレクトリを設定しています。
+- `launch_menu`
+  - PowerShell 7、Windows PowerShell、Command Prompt、WSL domain を launcher から開けます。
+- `wsl_domains`
+  - `wezterm.default_wsl_domains()` の結果をそのまま取り込みます。
+- `scrollback_lines = 10000`
+- `switch_to_last_active_tab_when_closing_tab = true`
 - `show_tab_index_in_tab_bar = false`
   - タブバーの数値プレフィックスを無効化しています。
+- `window_close_confirmation = "NeverPrompt"`
+  - ウィンドウ close ボタン経由では確認を出しません。
 
 ### キーバインド
 
@@ -55,6 +59,26 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 左隣のタブへ移動します。
 - `Ctrl + RightArrow`
   - 右隣のタブへ移動します。
+- `F3`
+  - launcher を開きます。
+- `Ctrl + C`
+  - 選択中テキストがあればコピーし、なければ通常の `Ctrl + C` を送ります。
+- `Ctrl + V`
+  - クリップボード貼り付けを行います。
+- `Ctrl + Shift + W`
+  - 確認付きで現在のタブを閉じます。
+- `Enter` / `Ctrl + Enter`
+  - 通常の pane ではそのまま送ります。
+  - foreground process が `codex` / `claude` 系のときだけ
+    - `Enter` は `Ctrl + J`
+    - `Ctrl + Enter` は通常の `Enter`
+
+### マウス
+
+- 右クリック押下時の既定動作は無効化しています。
+- 右クリックを離したとき
+  - 選択中テキストがあればコピー
+  - そうでなければ貼り付け
 
 ### ウィンドウ
 
