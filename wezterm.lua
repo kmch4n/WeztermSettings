@@ -13,13 +13,39 @@ if ok and type(local_config) == "table" then
     end
 end
 
+local target_triple = wezterm.target_triple
+local is_windows = target_triple:find("windows", 1, true) ~= nil
+local is_macos = target_triple:find("darwin", 1, true) ~= nil
+
 ----------------------------------------------------
 -- Events
 ----------------------------------------------------
 
 -- タブに明示的な名前が付いていればそれを優先し、
--- 付いていないタブで PowerShell 系の既定タイトルが見えている場合は
+-- 付いていないタブで OS ごとの既定 shell 名が見えている場合は
 -- タブバー上では Terminal という名前に置き換えます。
+local generic_shell_titles = {
+    ["windows powershell"] = true,
+    ["powershell.exe"] = true,
+    ["pwsh.exe"] = true,
+    ["cmd.exe"] = true,
+    ["zsh"] = true,
+    ["-zsh"] = true,
+    ["bash"] = true,
+    ["-bash"] = true,
+    ["sh"] = true,
+    ["-sh"] = true,
+    ["fish"] = true,
+    ["-fish"] = true,
+}
+
+local generic_cli_titles = {
+    ["codex"] = true,
+    ["codex.exe"] = true,
+    ["claude"] = true,
+    ["claude.exe"] = true,
+}
+
 local function get_tab_title(tab_info)
     local title = tab_info.tab_title
 
@@ -28,15 +54,13 @@ local function get_tab_title(tab_info)
     end
 
     title = tab_info.active_pane.title
+    if not title or title == "" then
+        return "Terminal"
+    end
 
     local normalized_title = title:lower()
 
-    if normalized_title == "windows powershell"
-        or normalized_title:find("powershell.exe", 1, true)
-        or normalized_title:find("pwsh.exe", 1, true)
-        or normalized_title:find("cmd.exe", 1, true)
-        or normalized_title:find("codex.exe", 1, true)
-    then
+    if generic_shell_titles[normalized_title] or generic_cli_titles[normalized_title] then
         return "Terminal"
     end
 
@@ -49,6 +73,10 @@ wezterm.on("format-tab-title", function(tab)
 end)
 
 local function build_launch_menu(wsl_domains)
+    if not is_windows then
+        return {}
+    end
+
     local launch_menu = {
         {
             label = "PowerShell 7",
@@ -76,8 +104,6 @@ local function build_launch_menu(wsl_domains)
 
     return launch_menu
 end
-
-local wsl_domains = wezterm.default_wsl_domains()
 
 local function copy_if_selected_or_send_ctrl_c(window, pane)
     local has_selection = window:get_selection_text_for_pane(pane) ~= ""
@@ -111,6 +137,51 @@ local function basename(path)
     return path:match("([^/\\]+)$")
 end
 
+local function file_exists(path)
+    if not path or path == "" then
+        return false
+    end
+
+    local file = io.open(path, "r")
+    if file then
+        file:close()
+        return true
+    end
+
+    return false
+end
+
+local function append_posix_shell_launchers(launch_menu)
+    local login_shell = os.getenv("SHELL")
+    local seen_args = {}
+
+    local function add_shell(path, label)
+        if not file_exists(path) then
+            return
+        end
+
+        local key = path .. "\0-l"
+        if seen_args[key] then
+            return
+        end
+
+        seen_args[key] = true
+        table.insert(launch_menu, {
+            label = label,
+            args = { path, "-l" },
+        })
+    end
+
+    if login_shell and login_shell ~= "" then
+        local shell_name = basename(login_shell) or "Login Shell"
+        add_shell(login_shell, shell_name .. " (login)")
+    end
+
+    add_shell("/bin/zsh", "zsh")
+    add_shell("/bin/bash", "bash")
+    add_shell("/bin/sh", "sh")
+end
+
 local function is_ai_cli_process(pane)
     local process_name = basename(pane:get_foreground_process_name())
     if not process_name then
@@ -140,6 +211,16 @@ local function send_key_for_current_process(window, pane, ai_key, ai_mods, defau
     }), pane)
 end
 
+local wsl_domains = {}
+local launch_menu = {}
+
+if is_windows then
+    wsl_domains = wezterm.default_wsl_domains()
+    launch_menu = build_launch_menu(wsl_domains)
+elseif is_macos then
+    append_posix_shell_launchers(launch_menu)
+end
+
 ----------------------------------------------------
 -- Reference
 ----------------------------------------------------
@@ -156,8 +237,11 @@ config.automatically_reload_config = true
 -- ウィンドウを閉じる際の確認ダイアログを表示しません。
 config.window_close_confirmation = "NeverPrompt"
 
--- 新しく開くターミナルでは Windows PowerShell を起動し、起動バナーは表示しません。
-config.default_prog = { "pwsh.exe", "-NoLogo" }
+-- Windows では新しく開くターミナルに PowerShell 7 を使います。
+-- macOS では WezTerm 既定の login shell 起動に任せます。
+if is_windows then
+    config.default_prog = { "pwsh.exe", "-NoLogo" }
+end
 
 -- 起動時の作業ディレクトリは local.lua 側で上書きできます。
 if not config.default_cwd then
@@ -165,8 +249,10 @@ if not config.default_cwd then
 end
 
 -- タブ番号の接頭辞を消し、名前だけをタブバーに表示します。
-config.wsl_domains = wsl_domains
-config.launch_menu = build_launch_menu(wsl_domains)
+if is_windows then
+    config.wsl_domains = wsl_domains
+end
+config.launch_menu = launch_menu
 config.scrollback_lines = 10000
 config.switch_to_last_active_tab_when_closing_tab = true
 config.show_tab_index_in_tab_bar = false
@@ -227,18 +313,27 @@ config.mouse_bindings = {
 -- Window
 ----------------------------------------------------
 
--- 新しく開くウィンドウの初期横幅を、文字数ベースで 120 桁にします。
-config.initial_cols = 120
+-- 新しく開くウィンドウの初期横幅は local.lua 側で上書きできます。
+if not config.initial_cols then
+    config.initial_cols = 120
+end
 
--- 新しく開くウィンドウの初期高さを、文字数ベースで 28 行にします。
-config.initial_rows = 28
+-- 新しく開くウィンドウの初期高さは local.lua 側で上書きできます。
+if not config.initial_rows then
+    config.initial_rows = 28
+end
 
 -- タイトルバーを消し、ウィンドウ操作ボタンはタブバー側へ統合します。
 -- これにより、上部の「cmd.exe」表示をなくしつつ、閉じる・最小化・最大化は維持します。
 config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"
 
--- タイトルバー上のボタンは Windows 風の見た目を使います。
-config.integrated_title_button_style = "Windows"
+-- タイトルバー上のボタンは OS に合わせた見た目を使います。
+if is_macos then
+    config.integrated_title_button_alignment = "Left"
+    config.integrated_title_button_style = "MacOsNative"
+else
+    config.integrated_title_button_style = "Windows"
+end
 
 ----------------------------------------------------
 -- Appearance
