@@ -4,3 +4,7 @@
 
 # local files
 local.lua
+
+# OS files
+.DS_Store
+Thumbs.db
