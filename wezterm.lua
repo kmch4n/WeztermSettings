@@ -182,18 +182,53 @@ local function append_posix_shell_launchers(launch_menu)
     add_shell("/bin/sh", "sh")
 end
 
-local function is_ai_cli_process(pane)
-    local process_name = basename(pane:get_foreground_process_name())
-    if not process_name then
-        return false
+local function process_matches_ai_cli(info)
+    local exe = basename(info.executable)
+    if exe then
+        exe = exe:lower()
+        if exe == "codex"
+            or exe == "codex.exe"
+            or exe == "claude"
+            or exe == "claude.exe" then
+            return true
+        end
     end
 
-    process_name = process_name:lower()
+    -- Claude Code は Node.js 製 npm CLI のため、Windows では node.exe、
+    -- macOS / Linux でも node として起動される。argv 側のパスに
+    -- @anthropic-ai/claude-code の断片が出るので、そこで判定する。
+    if info.argv then
+        for _, arg in ipairs(info.argv) do
+            local lower = arg:lower()
+            if lower:find("claude-code", 1, true)
+                or lower:find("@anthropic-ai", 1, true) then
+                return true
+            end
+        end
+    end
 
-    return process_name == "codex"
-        or process_name == "codex.exe"
-        or process_name == "claude"
-        or process_name == "claude.exe"
+    return false
+end
+
+-- Claude Code は MCP サーバーなど複数の子プロセスを同時に抱える。
+-- Windows の ConPTY には tty foreground の概念がないため、
+-- pane:get_foreground_process_info() は一番奥の子孫 (= MCP サーバー)
+-- を返すことがある。ppid を辿り、祖先に claude-code / codex があれば
+-- AI CLI が動いているとみなす。
+local function is_ai_cli_process(pane)
+    local info = pane:get_foreground_process_info()
+    local depth = 0
+    while info and depth < 8 do
+        if process_matches_ai_cli(info) then
+            return true
+        end
+        if not info.ppid or info.ppid <= 0 then
+            return false
+        end
+        info = wezterm.procinfo.get_info_for_pid(info.ppid)
+        depth = depth + 1
+    end
+    return false
 end
 
 local function send_key_for_current_process(window, pane, ai_key, ai_mods, default_key, default_mods)

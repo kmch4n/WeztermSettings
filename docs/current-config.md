@@ -75,6 +75,8 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - foreground process が `codex` / `claude` 系のときだけ
     - `Enter` は `Ctrl + J`
     - `Ctrl + Enter` は通常の `Enter`
+  - 判定は `pane:get_foreground_process_info()` を使い、executable 名と argv を併用します。
+  - Claude Code は Node.js 製 npm CLI のため、Windows の `node.exe` 経由でも argv に `@anthropic-ai/claude-code` が出るので検出できます。
 
 ### マウス
 
