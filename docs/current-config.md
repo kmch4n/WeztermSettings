@@ -55,6 +55,8 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - タブバーの数値プレフィックスを無効化しています。
 - `window_close_confirmation = "NeverPrompt"`
   - ウィンドウ close ボタン経由では確認を出しません。
+- `mux_enable_ssh_agent = false`
+  - Windows では WezTerm による `SSH_AUTH_SOCK` 注入を止め、Windows OpenSSH の `ssh-agent` をそのまま使います。
 
 ### キーバインド
 

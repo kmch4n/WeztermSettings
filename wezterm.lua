@@ -72,6 +72,8 @@ wezterm.on("format-tab-title", function(tab)
     return get_tab_title(tab)
 end)
 
+-- F3 ランチャーに表示する起動候補を作ります。
+-- Windows では PowerShell / cmd / WSL をまとめて選べるようにします。
 local function build_launch_menu(wsl_domains)
     if not is_windows then
         return {}
@@ -95,6 +97,7 @@ local function build_launch_menu(wsl_domains)
         },
     }
 
+    -- WezTerm が検出した WSL distro も同じランチャーに追加します。
     for _, domain in ipairs(wsl_domains) do
         table.insert(launch_menu, {
             label = domain.name,
@@ -105,6 +108,8 @@ local function build_launch_menu(wsl_domains)
     return launch_menu
 end
 
+-- Ctrl + C は、選択範囲がある時だけコピーとして扱います。
+-- 選択がない時は通常通りターミナルへ Ctrl+C を送ります。
 local function copy_if_selected_or_send_ctrl_c(window, pane)
     local has_selection = window:get_selection_text_for_pane(pane) ~= ""
 
@@ -117,6 +122,8 @@ local function copy_if_selected_or_send_ctrl_c(window, pane)
     window:perform_action(act.SendKey({ key = "c", mods = "CTRL" }), pane)
 end
 
+-- 右クリックは、選択中ならコピー、未選択なら貼り付けにします。
+-- Windows Terminal に近い操作感に寄せるための補助関数です。
 local function copy_if_selected_or_paste(window, pane)
     local has_selection = window:get_selection_text_for_pane(pane) ~= ""
 
@@ -129,6 +136,8 @@ local function copy_if_selected_or_paste(window, pane)
     window:perform_action(act.PasteFrom("Clipboard"), pane)
 end
 
+-- 実行ファイルのパスからファイル名だけを取り出します。
+-- Windows と POSIX の両方の区切り文字に対応します。
 local function basename(path)
     if not path or path == "" then
         return nil
@@ -137,6 +146,8 @@ local function basename(path)
     return path:match("([^/\\]+)$")
 end
 
+-- macOS / Linux の shell 候補をランチャーに出す前に、
+-- 実際にそのファイルが存在するかを確認します。
 local function file_exists(path)
     if not path or path == "" then
         return false
@@ -151,6 +162,8 @@ local function file_exists(path)
     return false
 end
 
+-- macOS / Linux では SHELL と代表的な shell をランチャーへ追加します。
+-- 同じ起動コマンドが重複しないように seen_args で管理します。
 local function append_posix_shell_launchers(launch_menu)
     local login_shell = os.getenv("SHELL")
     local seen_args = {}
@@ -182,6 +195,8 @@ local function append_posix_shell_launchers(launch_menu)
     add_shell("/bin/sh", "sh")
 end
 
+-- process info から、Codex / Claude Code が実行中か判定します。
+-- 実行ファイル名だけでなく、Node.js 経由の argv も見ます。
 local function process_matches_ai_cli(info)
     local exe = basename(info.executable)
     if exe then
@@ -231,6 +246,8 @@ local function is_ai_cli_process(pane)
     return false
 end
 
+-- 現在の pane が AI CLI なら専用キーを送り、それ以外なら通常キーを送ります。
+-- Enter と Ctrl+Enter の入れ替えをこの関数に集約しています。
 local function send_key_for_current_process(window, pane, ai_key, ai_mods, default_key, default_mods)
     local target_key = default_key
     local target_mods = default_mods
@@ -246,6 +263,7 @@ local function send_key_for_current_process(window, pane, ai_key, ai_mods, defau
     }), pane)
 end
 
+-- OS ごとにランチャー候補を組み立てます。
 local wsl_domains = {}
 local launch_menu = {}
 
@@ -271,6 +289,12 @@ config.automatically_reload_config = true
 
 -- ウィンドウを閉じる際の確認ダイアログを表示しません。
 config.window_close_confirmation = "NeverPrompt"
+
+-- Windows では OpenSSH の ssh-agent を使うため、WezTerm 側の
+-- SSH_AUTH_SOCK 注入を止めます。
+if is_windows then
+    config.mux_enable_ssh_agent = false
+end
 
 -- Windows では新しく開くターミナルに PowerShell 7 を使います。
 -- macOS では WezTerm 既定の login shell 起動に任せます。
@@ -301,6 +325,8 @@ config.show_tab_index_in_tab_bar = false
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
+    -- Enter は、Codex / Claude Code の時だけ Ctrl+J として送ります。
+    -- 通常の shell や SSH では普通の Enter のままにします。
     {
         key = "Enter",
         mods = "NONE",
@@ -308,6 +334,8 @@ config.keys = {
             send_key_for_current_process(window, pane, "j", "CTRL", "Enter", "NONE")
         end),
     },
+    -- Ctrl+Enter は、Codex / Claude Code の時だけ普通の Enter として送ります。
+    -- それ以外では Ctrl+Enter をそのままアプリケーションへ渡します。
     {
         key = "Enter",
         mods = "CTRL",
@@ -315,6 +343,7 @@ config.keys = {
             send_key_for_current_process(window, pane, "Enter", "NONE", "Enter", "CTRL")
         end),
     },
+    -- F3 でタブ、ワークスペース、ドメイン、起動メニューを横断検索します。
     {
         key = "F3",
         mods = "NONE",
@@ -331,6 +360,8 @@ config.keys = {
     { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
 }
 
+-- 右クリックの Down では何もせず、Up のタイミングでコピー/貼り付けを判定します。
+-- Down で処理すると選択操作と衝突しやすいためです。
 config.mouse_bindings = {
     {
         event = { Down = { streak = 1, button = "Right" } },
