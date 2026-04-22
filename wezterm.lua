@@ -225,23 +225,76 @@ local function process_matches_ai_cli(info)
     return false
 end
 
+-- 判定結果を pane 単位で短時間だけキャッシュし、
+-- Windows ConPTY 側で foreground や祖先の取得が一時的に失敗したときに、
+-- 直前の確定結果をフォールバックとして再利用するための入れ物です。
+local ai_cli_detection_cache = {}
+local AI_CLI_DETECTION_TTL_SECONDS = 2
+
+local function remember_ai_cli_detection(pane_id, result)
+    ai_cli_detection_cache[pane_id] = {
+        result = result,
+        at = os.time(),
+    }
+end
+
+local function recall_ai_cli_detection(pane_id)
+    local entry = ai_cli_detection_cache[pane_id]
+    if not entry then
+        return nil
+    end
+    if os.time() - entry.at > AI_CLI_DETECTION_TTL_SECONDS then
+        return nil
+    end
+    return entry.result
+end
+
 -- Claude Code は MCP サーバーなど複数の子プロセスを同時に抱える。
 -- Windows の ConPTY には tty foreground の概念がないため、
 -- pane:get_foreground_process_info() は一番奥の子孫 (= MCP サーバー)
 -- を返すことがある。ppid を辿り、祖先に claude-code / codex があれば
 -- AI CLI が動いているとみなす。
+-- 祖先取得や foreground 取得が失敗した場合は、直近 2 秒以内に得た
+-- 確定結果を再利用することで、一過性の取得失敗による誤判定を防ぐ。
 local function is_ai_cli_process(pane)
+    local pane_id = pane:pane_id()
     local info = pane:get_foreground_process_info()
+
+    if info == nil then
+        local cached = recall_ai_cli_detection(pane_id)
+        if cached ~= nil then
+            return cached
+        end
+        return false
+    end
+
     local depth = 0
-    while info and depth < 8 do
+    while info and depth < 16 do
         if process_matches_ai_cli(info) then
+            remember_ai_cli_detection(pane_id, true)
             return true
         end
         if not info.ppid or info.ppid <= 0 then
+            remember_ai_cli_detection(pane_id, false)
             return false
         end
-        info = wezterm.procinfo.get_info_for_pid(info.ppid)
+        local parent = wezterm.procinfo.get_info_for_pid(info.ppid)
+        if parent == nil then
+            -- 祖先取得の失敗は不確定として扱い、直近の判定があればそれを優先する。
+            local cached = recall_ai_cli_detection(pane_id)
+            if cached ~= nil then
+                return cached
+            end
+            return false
+        end
+        info = parent
         depth = depth + 1
+    end
+
+    -- depth 上限に到達した場合も不確定として扱う。
+    local cached = recall_ai_cli_detection(pane_id)
+    if cached ~= nil then
+        return cached
     end
     return false
 end
