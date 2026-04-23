@@ -1,7 +1,7 @@
 # Official Reference
 
 このファイルは、現行設定の正当性確認と、ローカル reference 作成時の一次情報確認に使った
-WezTerm 公式ドキュメントのリンク集です。確認日は 2026-04-15 です。
+WezTerm 公式ドキュメントのリンク集です。最終確認日は 2026-04-23 です。
 
 ローカル reference のカバー範囲は次のとおりです。
 
@@ -33,6 +33,12 @@ WezTerm 公式ドキュメントのリンク集です。確認日は 2026-04-15 
 - `format-tab-title`
   - <https://wezterm.org/config/lua/window-events/format-tab-title.html>
   - タブタイトルを動的に整形できること、同期イベントであることを確認できます。
+- User Vars
+  - <https://wezterm.org/recipes/passing-data.html>
+  - pane 内のアプリケーションから OSC 1337 `SetUserVar` escape sequence で WezTerm の Lua 設定へ状態を渡せることを確認できます。
+- `pane:get_user_vars()`
+  - <https://wezterm.org/config/lua/pane/get_user_vars.html>
+  - pane に設定された user var を Lua 側で読み取れることを確認できます。
 - `gui-startup`
   - <https://wezterm.org/config/lua/gui-events/gui-startup.html>
   - GUI 起動時に最初の window や pane を生成できることを確認できます。

@@ -6,6 +6,7 @@
 - OS ごとの主要 shell を launcher から開けるようにする
 - 右クリックのコピー/ペースト挙動をシンプルにする
 - Codex / Claude 実行中だけ `Enter` 系の入力を入れ替える
+- PowerShell profile から WezTerm pane に AI CLI 実行状態を通知する
 - ローカル環境依存の値は `local.lua` に逃がす
 
 ## ファイル構成
@@ -34,7 +35,7 @@
 - `Ctrl + Shift + W` でのタブ close は確認あり
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
 - タブタイトルの shell 名や `codex` / `claude` は `Terminal` 表示に寄せる
-- `codex` / `claude` 系 process が foreground のときだけ
+- `AI_CLI` user var、または `codex` / `claude` 系 process が検出できるときだけ
   - `Enter` を `Ctrl + J`
   - `Ctrl + Enter` を通常の `Enter`
 
@@ -53,7 +54,8 @@
   - `Ctrl + C` は選択中ならコピー、未選択なら割り込みとして送信します。
   - 右クリックは選択中ならコピー、未選択なら貼り付けです。
 - AI CLI 判定
-  - `codex` / `claude` / `claude-code` の foreground process を見て、AI CLI 実行中だけ Enter 系の入力を変えます。
+  - PowerShell profile の `claude` / `codex` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
+  - user var がない場合は、`codex` / `claude` / `claude-code` の foreground process を見て、AI CLI 実行中だけ Enter 系の入力を変えます。
   - Claude Code は Node.js 経由で起動するため、実行ファイル名だけでなく argv も確認します。
 - OS 別設定
   - Windows では WSL domain、OpenSSH agent、PowerShell 7 既定起動を明示します。
@@ -63,7 +65,19 @@
 
 1. `local.example.lua` を `local.lua` としてコピーする
 2. 必要なら `default_cwd`、`initial_cols`、`initial_rows` などをローカル環境に合わせて変更する
-3. WezTerm を再読み込みする
+3. PowerShell profile を読み込み直すか、新しいタブを開く
+4. WezTerm を再読み込みする
+
+## PowerShell 連携
+
+`C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`claude` / `codex` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
+
+これにより、Windows ConPTY が foreground process を `pwsh.exe` として返す場合でも、WezTerm 側は AI CLI 実行中だと判定できます。
+
+既に開いている shell では、次のどちらかが必要です。
+
+- 新しい WezTerm タブを開く
+- 既存 shell で `. $PROFILE` を実行してから `claude` / `codex` を起動し直す
 
 ## Docs
 

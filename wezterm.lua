@@ -225,6 +225,28 @@ local function process_matches_ai_cli(info)
     return false
 end
 
+local ai_cli_user_vars = {
+    ["codex"] = true,
+    ["claude"] = true,
+    ["claude-code"] = true,
+}
+
+-- PowerShell profile などから AI_CLI user var が設定されている場合は、
+-- process tree よりもその明示的な状態を優先します。
+local function user_var_matches_ai_cli(pane)
+    local vars = pane:get_user_vars()
+    if not vars then
+        return false
+    end
+
+    local ai_cli = vars.AI_CLI
+    if not ai_cli or ai_cli == "" then
+        return false
+    end
+
+    return ai_cli_user_vars[ai_cli:lower()] == true
+end
+
 -- 判定結果を pane 単位で短時間だけキャッシュし、
 -- Windows ConPTY 側で foreground や祖先の取得が一時的に失敗したときに、
 -- 直前の確定結果をフォールバックとして再利用するための入れ物です。
@@ -258,6 +280,12 @@ end
 -- 確定結果を再利用することで、一過性の取得失敗による誤判定を防ぐ。
 local function is_ai_cli_process(pane)
     local pane_id = pane:pane_id()
+
+    if user_var_matches_ai_cli(pane) then
+        remember_ai_cli_detection(pane_id, true)
+        return true
+    end
+
     local info = pane:get_foreground_process_info()
 
     if info == nil then

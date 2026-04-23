@@ -74,12 +74,14 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 確認付きで現在のタブを閉じます。
 - `Enter` / `Ctrl + Enter`
   - 通常の pane ではそのまま送ります。
-  - foreground process が `codex` / `claude` 系のときだけ
+  - `AI_CLI` user var、または foreground process が `codex` / `claude` 系のときだけ
     - `Enter` は `Ctrl + J`
     - `Ctrl + Enter` は通常の `Enter`
-  - 判定は `pane:get_foreground_process_info()` を使い、executable 名と argv を併用します。祖先は ppid を辿って最大 16 段まで調べます。
+  - 最初に `pane:get_user_vars().AI_CLI` を確認し、`codex` / `claude` / `claude-code` なら AI CLI とみなします。
+  - user var がない場合は `pane:get_foreground_process_info()` を使い、executable 名と argv を併用します。祖先は ppid を辿って最大 16 段まで調べます。
   - Claude Code は Node.js 製 npm CLI のため、Windows の `node.exe` 経由でも argv に `@anthropic-ai/claude-code` が出るので検出できます。
   - プロセス情報の取得が一時的に失敗した場合は、直近 2 秒以内に確定した判定結果を pane 単位で再利用し、Enter / Ctrl+Enter の取り違えを防ぎます。
+  - Windows では PowerShell profile の `claude` / `codex` wrapper が、実行中だけ `AI_CLI` user var を設定します。
 
 ### マウス
 
@@ -116,3 +118,4 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 - 新しいマシンで使うときは `local.example.lua` をコピーして `local.lua` を作れば十分です。
 - 起動サイズをマシンごとに変えたい場合は `local.lua` の `initial_cols` / `initial_rows` を調整します。
 - 共有設定を増やす場合はまず `wezterm.lua` に書き、ローカル差分だけを `local.lua` に残します。
+- `claude` / `codex` の Enter 入れ替えが効かない場合は、新しい WezTerm タブを開くか、既存 shell で `. $PROFILE` を実行してから CLI を起動し直します。
