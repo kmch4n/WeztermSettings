@@ -1,7 +1,7 @@
 # Official Reference
 
 このファイルは、現行設定の正当性確認と、ローカル reference 作成時の一次情報確認に使った
-WezTerm 公式ドキュメントのリンク集です。最終確認日は 2026-04-23 です。
+WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日は 2026-05-03 です。
 
 ローカル reference のカバー範囲は次のとおりです。
 
@@ -86,6 +86,9 @@ WezTerm 公式ドキュメントのリンク集です。最終確認日は 2026-
 
 - Config Options
   - <https://wezterm.org/config/lua/config/index.html>
+- Codex config schema
+  - <https://raw.githubusercontent.com/openai/codex/main/codex-rs/core/config.schema.json>
+  - Codex TUI の `[tui.keymap.editor]` / `[tui.keymap.composer]` と、`insert_newline` / `submit` action の存在を確認できます。
 
 このリポジトリでは、自分用にローカル reference も持ちますが、
 値の型、既定値、対応 OS、バージョン制約は必ず公式 docs を最終根拠にします。

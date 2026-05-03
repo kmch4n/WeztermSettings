@@ -195,56 +195,59 @@ local function append_posix_shell_launchers(launch_menu)
     add_shell("/bin/sh", "sh")
 end
 
--- process info から、Codex / Claude Code が実行中か判定します。
+-- process info から、Codex / Claude Code のどちらが実行中か判定します。
 -- 実行ファイル名だけでなく、Node.js 経由の argv も見ます。
-local function process_matches_ai_cli(info)
+local function process_ai_cli_name(info)
     local exe = basename(info.executable)
     if exe then
         exe = exe:lower()
-        if exe == "codex"
-            or exe == "codex.exe"
-            or exe == "claude"
-            or exe == "claude.exe" then
-            return true
+        if exe == "codex" or exe == "codex.exe" then
+            return "codex"
+        end
+        if exe == "claude" or exe == "claude.exe" then
+            return "claude"
         end
     end
 
-    -- Claude Code は Node.js 製 npm CLI のため、Windows では node.exe、
-    -- macOS / Linux でも node として起動される。argv 側のパスに
-    -- @anthropic-ai/claude-code の断片が出るので、そこで判定する。
+    -- npm CLI は node 経由で起動される場合があるため、
+    -- argv 側の package path も見て判定する。
     if info.argv then
         for _, arg in ipairs(info.argv) do
             local lower = arg:lower()
+            if lower:find("@openai/codex", 1, true)
+                or lower:find("codex.js", 1, true) then
+                return "codex"
+            end
             if lower:find("claude-code", 1, true)
                 or lower:find("@anthropic-ai", 1, true) then
-                return true
+                return "claude"
             end
         end
     end
 
-    return false
+    return nil
 end
 
 local ai_cli_user_vars = {
-    ["codex"] = true,
-    ["claude"] = true,
-    ["claude-code"] = true,
+    ["codex"] = "codex",
+    ["claude"] = "claude",
+    ["claude-code"] = "claude",
 }
 
 -- PowerShell profile などから AI_CLI user var が設定されている場合は、
 -- process tree よりもその明示的な状態を優先します。
-local function user_var_matches_ai_cli(pane)
+local function user_var_ai_cli_name(pane)
     local vars = pane:get_user_vars()
     if not vars then
-        return false
+        return nil
     end
 
     local ai_cli = vars.AI_CLI
     if not ai_cli or ai_cli == "" then
-        return false
+        return nil
     end
 
-    return ai_cli_user_vars[ai_cli:lower()] == true
+    return ai_cli_user_vars[ai_cli:lower()]
 end
 
 -- 判定結果を pane 単位で短時間だけキャッシュし、
@@ -271,19 +274,20 @@ local function recall_ai_cli_detection(pane_id)
     return entry.result
 end
 
--- Claude Code は MCP サーバーなど複数の子プロセスを同時に抱える。
+-- AI CLI は MCP サーバーなど複数の子プロセスを同時に抱える。
 -- Windows の ConPTY には tty foreground の概念がないため、
 -- pane:get_foreground_process_info() は一番奥の子孫 (= MCP サーバー)
--- を返すことがある。ppid を辿り、祖先に claude-code / codex があれば
+-- を返すことがある。ppid を辿り、祖先に Codex / Claude Code があれば
 -- AI CLI が動いているとみなす。
 -- 祖先取得や foreground 取得が失敗した場合は、直近 2 秒以内に得た
 -- 確定結果を再利用することで、一過性の取得失敗による誤判定を防ぐ。
-local function is_ai_cli_process(pane)
+local function current_ai_cli_name(pane)
     local pane_id = pane:pane_id()
+    local user_var_cli = user_var_ai_cli_name(pane)
 
-    if user_var_matches_ai_cli(pane) then
-        remember_ai_cli_detection(pane_id, true)
-        return true
+    if user_var_cli then
+        remember_ai_cli_detection(pane_id, user_var_cli)
+        return user_var_cli
     end
 
     local info = pane:get_foreground_process_info()
@@ -293,18 +297,19 @@ local function is_ai_cli_process(pane)
         if cached ~= nil then
             return cached
         end
-        return false
+        return nil
     end
 
     local depth = 0
     while info and depth < 16 do
-        if process_matches_ai_cli(info) then
-            remember_ai_cli_detection(pane_id, true)
-            return true
+        local cli_name = process_ai_cli_name(info)
+        if cli_name then
+            remember_ai_cli_detection(pane_id, cli_name)
+            return cli_name
         end
         if not info.ppid or info.ppid <= 0 then
             remember_ai_cli_detection(pane_id, false)
-            return false
+            return nil
         end
         local parent = wezterm.procinfo.get_info_for_pid(info.ppid)
         if parent == nil then
@@ -313,7 +318,7 @@ local function is_ai_cli_process(pane)
             if cached ~= nil then
                 return cached
             end
-            return false
+            return nil
         end
         info = parent
         depth = depth + 1
@@ -324,23 +329,32 @@ local function is_ai_cli_process(pane)
     if cached ~= nil then
         return cached
     end
-    return false
+    return nil
 end
 
--- 現在の pane が AI CLI なら専用キーを送り、それ以外なら通常キーを送ります。
+-- 現在の pane が AI CLI なら CLI ごとの専用入力を送り、
+-- それ以外なら通常キーを送ります。
 -- Enter と Ctrl+Enter の入れ替えをこの関数に集約しています。
-local function send_key_for_current_process(window, pane, ai_key, ai_mods, default_key, default_mods)
-    local target_key = default_key
-    local target_mods = default_mods
+local function send_key_for_current_process(window, pane, cli_keys, default_key, default_mods)
+    local cli_name = current_ai_cli_name(pane)
+    local cli_key = cli_name and cli_keys[cli_name] or nil
 
-    if is_ai_cli_process(pane) then
-        target_key = ai_key
-        target_mods = ai_mods
+    if cli_key then
+        if cli_key.action then
+            window:perform_action(cli_key.action, pane)
+            return
+        end
+
+        window:perform_action(act.SendKey({
+            key = cli_key.key,
+            mods = cli_key.mods,
+        }), pane)
+        return
     end
 
     window:perform_action(act.SendKey({
-        key = target_key,
-        mods = target_mods,
+        key = default_key,
+        mods = default_mods,
     }), pane)
 end
 
@@ -406,22 +420,27 @@ config.show_tab_index_in_tab_bar = false
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
-    -- Enter は、Codex / Claude Code の時だけ Ctrl+J として送ります。
-    -- 通常の shell や SSH では普通の Enter のままにします。
+    -- Enter は、Codex では通常の Enter のまま送ります。
+    -- Claude Code では Ctrl+J として送ります。
     {
         key = "Enter",
         mods = "NONE",
         action = wezterm.action_callback(function(window, pane)
-            send_key_for_current_process(window, pane, "j", "CTRL", "Enter", "NONE")
+            send_key_for_current_process(window, pane, {
+                claude = { key = "j", mods = "CTRL" },
+            }, "Enter", "NONE")
         end),
     },
-    -- Ctrl+Enter は、Codex / Claude Code の時だけ普通の Enter として送ります。
+    -- Ctrl+Enter は、Codex の時だけ F12 として送ります。
     -- それ以外では Ctrl+Enter をそのままアプリケーションへ渡します。
     {
         key = "Enter",
         mods = "CTRL",
         action = wezterm.action_callback(function(window, pane)
-            send_key_for_current_process(window, pane, "Enter", "NONE", "Enter", "CTRL")
+            send_key_for_current_process(window, pane, {
+                codex = { key = "F12", mods = "NONE" },
+                claude = { key = "Enter", mods = "NONE" },
+            }, "Enter", "CTRL")
         end),
     },
     -- F3 でタブ、ワークスペース、ドメイン、起動メニューを横断検索します。

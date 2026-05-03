@@ -5,8 +5,9 @@
 - タブタイトルを見やすくする
 - OS ごとの主要 shell を launcher から開けるようにする
 - 右クリックのコピー/ペースト挙動をシンプルにする
-- Codex / Claude 実行中だけ `Enter` 系の入力を入れ替える
-- PowerShell profile から WezTerm pane に AI CLI 実行状態を通知する
+- Codex 実行中だけ WezTerm 側で `Enter` 系の入力を入れ替える
+- Codex は Codex TUI 側の keymap と WezTerm 側の物理キー変換を組み合わせる
+- PowerShell profile から WezTerm pane に Codex / Claude 実行状態を通知する
 - ローカル環境依存の値は `local.lua` に逃がす
 
 ## ファイル構成
@@ -35,9 +36,16 @@
 - `Ctrl + Shift + W` でのタブ close は確認あり
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
 - タブタイトルの shell 名や `codex` / `claude` は `Terminal` 表示に寄せる
-- `AI_CLI` user var、または `codex` / `claude` 系 process が検出できるときだけ
+- `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
+- Codex 実行中は
+  - `Enter` を通常の `Enter`
+  - `Ctrl + Enter` を `F12`
+- Claude 実行中は
   - `Enter` を `Ctrl + J`
   - `Ctrl + Enter` を通常の `Enter`
+- Codex は `~/.codex/config.toml` の native keymap で
+  - 通常の `Enter` を newline
+  - `F12` を submit
 
 ## `wezterm.lua` の読み方
 
@@ -54,9 +62,10 @@
   - `Ctrl + C` は選択中ならコピー、未選択なら割り込みとして送信します。
   - 右クリックは選択中ならコピー、未選択なら貼り付けです。
 - AI CLI 判定
-  - PowerShell profile の `claude` / `codex` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
-  - user var がない場合は、`codex` / `claude` / `claude-code` の foreground process を見て、AI CLI 実行中だけ Enter 系の入力を変えます。
-  - Claude Code は Node.js 経由で起動するため、実行ファイル名だけでなく argv も確認します。
+  - PowerShell profile の `codex` / `claude` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
+  - user var がない場合は、`codex` / `claude` / `claude-code` の foreground process を見て、CLI 種別を判定します。
+  - Claude Code の Enter 入れ替えは既存の挙動を維持します。
+  - Codex と Claude Code は Node.js 経由で起動する場合があるため、実行ファイル名だけでなく argv も確認します。
 - OS 別設定
   - Windows では WSL domain、OpenSSH agent、PowerShell 7 既定起動を明示します。
   - macOS では WezTerm 既定の login shell を尊重します。
@@ -70,14 +79,15 @@
 
 ## PowerShell 連携
 
-`C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`claude` / `codex` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
+`C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`codex` / `claude` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
 
 これにより、Windows ConPTY が foreground process を `pwsh.exe` として返す場合でも、WezTerm 側は AI CLI 実行中だと判定できます。
+Codex は npm の `codex.ps1` 経由だと foreground が `node.exe` になることがあるため、profile wrapper では同梱 native `codex.exe` を優先して起動します。
 
 既に開いている shell では、次のどちらかが必要です。
 
 - 新しい WezTerm タブを開く
-- 既存 shell で `. $PROFILE` を実行してから `claude` / `codex` を起動し直す
+- 既存 shell で `. $PROFILE` を実行してから `codex` / `claude` を起動し直す
 
 ## Docs
 

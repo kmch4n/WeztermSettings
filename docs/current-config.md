@@ -74,14 +74,19 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 確認付きで現在のタブを閉じます。
 - `Enter` / `Ctrl + Enter`
   - 通常の pane ではそのまま送ります。
-  - `AI_CLI` user var、または foreground process が `codex` / `claude` 系のときだけ
+  - Codex 実行中だけ
+    - `Enter` は通常の `Enter`
+    - `Ctrl + Enter` は `F12`
+  - Claude 実行中だけ
     - `Enter` は `Ctrl + J`
     - `Ctrl + Enter` は通常の `Enter`
+  - Codex は `~/.codex/config.toml` の Codex TUI keymap で通常の `Enter` を newline、`F12` を submit にします。
   - 最初に `pane:get_user_vars().AI_CLI` を確認し、`codex` / `claude` / `claude-code` なら AI CLI とみなします。
   - user var がない場合は `pane:get_foreground_process_info()` を使い、executable 名と argv を併用します。祖先は ppid を辿って最大 16 段まで調べます。
-  - Claude Code は Node.js 製 npm CLI のため、Windows の `node.exe` 経由でも argv に `@anthropic-ai/claude-code` が出るので検出できます。
+  - Codex と Claude Code は Node.js 製 npm CLI 経由で起動する場合があるため、Windows の `node.exe` 経由でも argv を見て検出できます。
   - プロセス情報の取得が一時的に失敗した場合は、直近 2 秒以内に確定した判定結果を pane 単位で再利用し、Enter / Ctrl+Enter の取り違えを防ぎます。
-  - Windows では PowerShell profile の `claude` / `codex` wrapper が、実行中だけ `AI_CLI` user var を設定します。
+  - Windows では PowerShell profile の `codex` / `claude` wrapper が、実行中だけ `AI_CLI` user var を設定します。
+  - Codex wrapper は、タブタイトルや foreground process が `node.exe` に寄らないよう、npm wrapper より同梱 native `codex.exe` を優先します。
 
 ### マウス
 
@@ -118,4 +123,6 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 - 新しいマシンで使うときは `local.example.lua` をコピーして `local.lua` を作れば十分です。
 - 起動サイズをマシンごとに変えたい場合は `local.lua` の `initial_cols` / `initial_rows` を調整します。
 - 共有設定を増やす場合はまず `wezterm.lua` に書き、ローカル差分だけを `local.lua` に残します。
-- `claude` / `codex` の Enter 入れ替えが効かない場合は、新しい WezTerm タブを開くか、既存 shell で `. $PROFILE` を実行してから CLI を起動し直します。
+- `codex` の Enter 入れ替えが効かない場合は、新しい WezTerm タブを開くか、既存 shell で `. $PROFILE` を実行してから CLI を起動し直します。
+- Codex のタブタイトルが `node.exe` になる場合は、古い shell で profile が再読み込みされていないか、native `codex.exe` が見つからず npm wrapper に fallback している可能性があります。
+- Codex の Enter 挙動は、WezTerm 側の Codex process 検出と `~/.codex/config.toml` の `[tui.keymap.editor]` / `[tui.keymap.composer]` を確認します。
