@@ -54,7 +54,9 @@
 - `local.lua` の読み込み
   - `local.lua` が存在する場合だけ読み込み、共通設定をローカル値で上書きします。
 - タブタイトル整形
-  - shell 名や `codex` / `claude` など、タブ名として情報量が低いものを `Terminal` に寄せます。
+  - shell 名など、タブ名として情報量が低いものを `Terminal` に寄せます。
+  - Codex / Claude Code は、認識できる場合は `Codex` / `ClaudeCode` と表示します。
+  - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex` と表示します。
 - launcher 生成
   - `build_launch_menu` で Windows 用の PowerShell / Command Prompt / WSL 候補を作ります。
   - `append_posix_shell_launchers` で macOS / Linux 用の login shell 候補を作ります。

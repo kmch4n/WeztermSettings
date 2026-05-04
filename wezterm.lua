@@ -24,6 +24,7 @@ local is_macos = target_triple:find("darwin", 1, true) ~= nil
 -- タブに明示的な名前が付いていればそれを優先し、
 -- 付いていないタブで OS ごとの既定 shell 名が見えている場合は
 -- タブバー上では Terminal という名前に置き換えます。
+-- AI CLI が動いている場合は、その CLI 名を表示します。
 local generic_shell_titles = {
     ["windows powershell"] = true,
     ["powershell.exe"] = true,
@@ -39,18 +40,47 @@ local generic_shell_titles = {
     ["-fish"] = true,
 }
 
-local generic_cli_titles = {
-    ["codex"] = true,
-    ["codex.exe"] = true,
-    ["claude"] = true,
-    ["claude.exe"] = true,
+local cli_title_names = {
+    ["codex"] = "Codex",
+    ["codex.exe"] = "Codex",
+    ["claude"] = "ClaudeCode",
+    ["claude.exe"] = "ClaudeCode",
 }
+
+local ai_cli_display_names = {
+    codex = "Codex",
+    claude = "ClaudeCode",
+}
+
+local ai_cli_user_vars = {
+    ["codex"] = "codex",
+    ["claude"] = "claude",
+    ["claude-code"] = "claude",
+}
+
+local function user_vars_ai_cli_name(vars)
+    if not vars then
+        return nil
+    end
+
+    local ai_cli = vars.AI_CLI
+    if not ai_cli or ai_cli == "" then
+        return nil
+    end
+
+    return ai_cli_user_vars[ai_cli:lower()]
+end
 
 local function get_tab_title(tab_info)
     local title = tab_info.tab_title
 
     if title and #title > 0 then
         return title
+    end
+
+    local ai_cli_name = user_vars_ai_cli_name(tab_info.active_pane.user_vars)
+    if ai_cli_name then
+        return ai_cli_display_names[ai_cli_name] or "Terminal"
     end
 
     title = tab_info.active_pane.title
@@ -60,8 +90,12 @@ local function get_tab_title(tab_info)
 
     local normalized_title = title:lower()
 
-    if generic_shell_titles[normalized_title] or generic_cli_titles[normalized_title] then
+    if generic_shell_titles[normalized_title] then
         return "Terminal"
+    end
+
+    if cli_title_names[normalized_title] then
+        return cli_title_names[normalized_title]
     end
 
     return title
@@ -228,26 +262,10 @@ local function process_ai_cli_name(info)
     return nil
 end
 
-local ai_cli_user_vars = {
-    ["codex"] = "codex",
-    ["claude"] = "claude",
-    ["claude-code"] = "claude",
-}
-
 -- PowerShell profile などから AI_CLI user var が設定されている場合は、
 -- process tree よりもその明示的な状態を優先します。
 local function user_var_ai_cli_name(pane)
-    local vars = pane:get_user_vars()
-    if not vars then
-        return nil
-    end
-
-    local ai_cli = vars.AI_CLI
-    if not ai_cli or ai_cli == "" then
-        return nil
-    end
-
-    return ai_cli_user_vars[ai_cli:lower()]
+    return user_vars_ai_cli_name(pane:get_user_vars())
 end
 
 -- 判定結果を pane 単位で短時間だけキャッシュし、
