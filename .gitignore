@@ -4,6 +4,7 @@
 
 # local files
 local.lua
+session-state.json
 
 # OS files
 .DS_Store

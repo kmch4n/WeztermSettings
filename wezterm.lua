@@ -1,6 +1,7 @@
 -- WezTerm の API を読み込みます。
 local wezterm = require("wezterm")
 local act = wezterm.action
+local session = require("session")
 
 -- 設定を書き込むためのオブジェクトを作成します。
 local config = wezterm.config_builder()
@@ -216,6 +217,19 @@ end
 -- タブバーの表示名を整えます。
 wezterm.on("format-tab-title", function(tab)
     return get_tab_title(tab)
+end)
+
+-- 前回保存された tab / cwd だけを GUI 起動時に復元します。
+-- コマンドや実行中プロセスは再実行しません。
+wezterm.on("gui-startup", function(cmd)
+    if not session.restore_on_startup(wezterm, cmd) then
+        wezterm.mux.spawn_window(cmd or {})
+    end
+end)
+
+-- 終了直前イベントに依存せず、定期的に軽量 snapshot を保存します。
+wezterm.on("update-status", function()
+    session.save_periodically(wezterm)
 end)
 
 -- F3 ランチャーに表示する起動候補を作ります。

@@ -8,6 +8,7 @@
 - Codex 実行中だけ WezTerm 側で `Enter` 系の入力を入れ替える
 - Codex は Codex TUI 側の keymap と WezTerm 側の物理キー変換を組み合わせる
 - PowerShell profile から WezTerm pane に Codex / Claude / Expo 実行状態を通知する
+- 前回終了前に開いていたタブと作業ディレクトリを復元する
 - ローカル環境依存の値は `local.lua` に逃がす
 
 ## ファイル構成
@@ -19,6 +20,8 @@
   - Git 管理対象外
 - `local.example.lua`
   - `local.lua` の雛形
+- `session.lua`
+  - 前回 session の tab / cwd 保存と復元
 - `docs/`
   - 設定の説明、公式参照先、網羅 reference
 
@@ -35,6 +38,8 @@
 - ウィンドウ close ボタンは確認なし
 - `Ctrl + Shift + W` でのタブ close も確認なし
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
+- 60 秒ごとに tab / cwd の軽量 snapshot を `session-state.json` に保存
+- 次回 GUI 起動時に前回 snapshot から tab と cwd だけを復元
 - タブタイトルの shell 名は `Terminal` 表示に寄せ、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
 - Codex 実行中は
@@ -59,6 +64,10 @@
   - `npx expo ...` は、PowerShell profile から `TAB_CONTEXT` と起動時の作業ディレクトリ名が設定される場合に `Expo - SnowLog` のように表示します。
   - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。
   - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
+- session 復元
+  - `session.lua` が 60 秒ごとに現在の window / tab / cwd を `session-state.json` に保存します。
+  - WezTerm の GUI 起動時に、保存されていた cwd ごとに shell tab を開き直します。
+  - 実行中コマンド、pane 分割、scrollback、SSH 接続は復元しません。
 - launcher 生成
   - `build_launch_menu` で Windows 用の PowerShell / Command Prompt / WSL 候補を作ります。
   - `append_posix_shell_launchers` で macOS / Linux 用の login shell 候補を作ります。

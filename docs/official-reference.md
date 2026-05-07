@@ -1,7 +1,7 @@
 # Official Reference
 
 このファイルは、現行設定の正当性確認と、ローカル reference 作成時の一次情報確認に使った
-WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日は 2026-05-03 です。
+WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日は 2026-05-07 です。
 
 ローカル reference のカバー範囲は次のとおりです。
 
@@ -55,6 +55,28 @@ WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日�
   - <https://wezterm.org/config/lua/gui-events/gui-startup.html>
   - GUI 起動時に最初の window や pane を生成できることを確認できます。
   - pane を生成すると `default_prog` よりその起動内容が優先されることもここで確認できます。
+- `update-status`
+  - <https://wezterm.org/config/lua/window-events/update-status.html>
+  - 定期的な window event として、軽量 session snapshot の保存タイミングに使えることを確認できます。
+
+## Multiplexer / Session 復元
+
+- `wezterm.mux`
+  - <https://wezterm.org/config/lua/wezterm.mux/index.html>
+  - mux layer で window / tab / pane を扱えること、起動時の生成処理は `gui-startup` / `mux-startup` で行うべきことを確認できます。
+- `MuxWindow`
+  - <https://wezterm.org/config/lua/mux-window/index.html>
+  - `tabs_with_info()`、`spawn_tab()`、`get_workspace()` などで window 内の tab と workspace を扱えることを確認できます。
+- `MuxTab`
+  - <https://wezterm.org/config/lua/MuxTab/index.html>
+  - `panes_with_info()`、`get_title()`、`set_title()`、`activate()` などで tab の active pane と明示 title を扱えることを確認できます。
+- `tab:get_title()`
+  - <https://wezterm.org/config/lua/MuxTab/get_title.html>
+  - `tab:set_title()` で明示設定された tab title を取得する API であることを確認できます。
+- `wezterm.json_encode` / `wezterm.json_parse`
+  - <https://wezterm.org/config/lua/wezterm/json_encode.html>
+  - <https://wezterm.org/config/lua/wezterm/json_parse.html>
+  - Lua table を JSON 保存し、起動時に読み戻せることを確認できます。
 
 ## 現在使っている主要設定
 

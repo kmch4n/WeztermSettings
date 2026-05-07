@@ -14,10 +14,11 @@
   - 現在は `default_cwd`、`initial_cols`、`initial_rows` を持てます。
 - `local.example.lua`
   - `local.lua` の雛形です。
+- `session.lua`
+  - 前回 session の tab / cwd だけを保存・復元します。
 
-現時点の設定量では、これ以上の分割は不要です。
 WezTerm 公式 docs では複数ファイル構成自体はサポートされていますが、
-このリポジトリでは共通設定とローカル上書きの 2 層で十分です。
+このリポジトリでは共通設定、ローカル上書き、session 補助の 3 層に分けています。
 
 ## 現在の設定内容
 
@@ -40,6 +41,13 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 作業ディレクトリ名は 24 columns までに切り詰めます。
   - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex - <directory>` / `ClaudeCode - <directory>` に置き換えます。
   - `TAB_CONTEXT` user var が設定されている pane では、Expo CLI 由来の `node.exe` や `C:\Windows\system32` 表示を `Expo - <directory>` に置き換えます。
+- `gui-startup`
+  - 保存済みの `session-state.json` があれば、前回の window / tab / cwd を復元します。
+  - `wezterm start --cwd <path>` や `wezterm start -- <command>` のように明示起動条件がある場合は復元しません。
+  - 復元するのは shell tab と cwd だけです。実行中コマンドは再実行しません。
+- `update-status`
+  - 終了直前イベントに依存せず、60 秒ごとに session snapshot を保存します。
+  - 保存対象は workspace、window、tab、active tab index、明示 tab title、active pane の cwd です。
 
 ### 起動・既定値
 
@@ -64,6 +72,26 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - ウィンドウ close ボタン経由では確認を出しません。
 - `mux_enable_ssh_agent = false`
   - Windows では WezTerm による `SSH_AUTH_SOCK` 注入を止め、Windows OpenSSH の `ssh-agent` をそのまま使います。
+
+### Session 復元
+
+- 保存ファイルは `session-state.json` です。
+  - Git 管理対象外です。
+  - `wezterm.config_dir` 直下に作られます。
+- 復元対象
+  - window / workspace
+  - tab
+  - tab の active pane cwd
+  - 明示 tab title
+  - active tab index
+- 復元対象外
+  - 実行中コマンド
+  - pane 分割
+  - scrollback
+  - SSH / WSL / remote domain の状態
+  - Codex / Claude / Expo などのプロセス状態
+- 存在しない cwd は復元対象から外します。
+- 1 window あたり最大 20 tabs まで復元します。
 
 ### キーバインド
 
