@@ -33,7 +33,7 @@
 - macOS の launcher では login shell と標準 shell を表示
 - 右クリックは「選択があればコピー、なければ貼り付け」
 - ウィンドウ close ボタンは確認なし
-- `Ctrl + Shift + W` でのタブ close は確認あり
+- `Ctrl + Shift + W` でのタブ close も確認なし
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
 - タブタイトルの shell 名は `Terminal` 表示に寄せ、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ

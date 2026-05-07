@@ -586,7 +586,7 @@ config.keys = {
         mods = "CTRL",
         action = wezterm.action_callback(copy_if_selected_or_send_ctrl_c),
     },
-    { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = true }) },
+    { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = false }) },
     { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
 }
 
