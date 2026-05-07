@@ -24,8 +24,18 @@
 ## 設定ファイルの構成
 
 - `wezterm.lua`
-  - 共通設定本体です。
-  - イベント、起動設定、ウィンドウ、外観、既定キーバインドを持ちます。
+  - 共通設定の入口です。
+  - event 登録、起動設定、ウィンドウ、外観、既定キーバインドを持ちます。
+- `title.lua`
+  - タブタイトル整形を担当します。
+- `ai_cli.lua`
+  - Codex / Claude Code の検出と `Enter` 系キー変換を担当します。
+- `launcher.lua`
+  - OS ごとの launcher menu を生成します。
+- `clipboard.lua`
+  - コピー/貼り付け系の補助操作を担当します。
+- `session.lua`
+  - 前回 session の tab / cwd 保存と復元を担当します。
 - `local.lua`
   - ローカル環境専用の上書きです。
   - Git 管理の対象外です。

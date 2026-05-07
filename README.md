@@ -14,14 +14,23 @@
 ## ファイル構成
 
 - `wezterm.lua`
-  - 共通設定本体
+  - 共通設定の入口
+  - 各モジュールを読み込み、イベント登録・キー設定・外観設定をまとめる
+- `ai_cli.lua`
+  - Codex / Claude Code の検出と `Enter` 系キー変換
+- `clipboard.lua`
+  - `Ctrl + C` と右クリックのコピー/貼り付け補助
+- `launcher.lua`
+  - OS ごとの launcher menu 生成
+- `title.lua`
+  - タブタイトル整形
+- `session.lua`
+  - 前回 session の tab / cwd 保存と復元
 - `local.lua`
   - ローカル環境専用の上書き
   - Git 管理対象外
 - `local.example.lua`
   - `local.lua` の雛形
-- `session.lua`
-  - 前回 session の tab / cwd 保存と復元
 - `docs/`
   - 設定の説明、公式参照先、網羅 reference
 
@@ -54,27 +63,27 @@
 
 ## `wezterm.lua` の読み方
 
-`wezterm.lua` は、上から順に「共通の準備」「イベント処理」「補助関数」「実際の設定値」という流れで構成しています。
+`wezterm.lua` は、共通設定の入口です。個別の判断や補助処理は Lua module に分け、設定本体では「何を有効化しているか」が追いやすい形にしています。
 
 - `local.lua` の読み込み
   - `local.lua` が存在する場合だけ読み込み、共通設定をローカル値で上書きします。
-- タブタイトル整形
+- `title.lua`
   - shell 名など、タブ名として情報量が低いものを `Terminal` に寄せます。
   - Codex / Claude Code は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
   - `npx expo ...` は、PowerShell profile から `TAB_CONTEXT` と起動時の作業ディレクトリ名が設定される場合に `Expo - SnowLog` のように表示します。
   - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。
   - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
-- session 復元
+- `session.lua`
   - `session.lua` が 60 秒ごとに現在の window / tab / cwd を `session-state.json` に保存します。
   - WezTerm の GUI 起動時に、保存されていた cwd ごとに shell tab を開き直します。
   - 実行中コマンド、pane 分割、scrollback、SSH 接続は復元しません。
-- launcher 生成
-  - `build_launch_menu` で Windows 用の PowerShell / Command Prompt / WSL 候補を作ります。
-  - `append_posix_shell_launchers` で macOS / Linux 用の login shell 候補を作ります。
-- クリップボード補助
+- `launcher.lua`
+  - Windows 用の PowerShell / Command Prompt / WSL 候補を作ります。
+  - macOS / Linux 用の login shell 候補を作ります。
+- `clipboard.lua`
   - `Ctrl + C` は選択中ならコピー、未選択なら割り込みとして送信します。
   - 右クリックは選択中ならコピー、未選択なら貼り付けです。
-- AI CLI 判定
+- `ai_cli.lua`
   - PowerShell profile の `codex` / `claude` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
   - user var がない場合は、`codex` / `claude` / `claude-code` の foreground process を見て、CLI 種別を判定します。
   - Claude Code の Enter 入れ替えは既存の挙動を維持します。

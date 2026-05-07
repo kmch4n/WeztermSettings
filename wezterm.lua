@@ -1,7 +1,12 @@
 -- WezTerm の API を読み込みます。
 local wezterm = require("wezterm")
 local act = wezterm.action
+
+local ai_cli = require("ai_cli")
+local clipboard = require("clipboard")
+local launcher = require("launcher")
 local session = require("session")
+local title = require("title")
 
 -- 設定を書き込むためのオブジェクトを作成します。
 local config = wezterm.config_builder()
@@ -17,207 +22,13 @@ end
 local target_triple = wezterm.target_triple
 local is_windows = target_triple:find("windows", 1, true) ~= nil
 local is_macos = target_triple:find("darwin", 1, true) ~= nil
+local wsl_domains, launch_menu = launcher.build(is_windows, is_macos)
 
 ----------------------------------------------------
 -- Events
 ----------------------------------------------------
 
--- タブに明示的な名前が付いていればそれを優先し、
--- 付いていないタブで OS ごとの既定 shell 名が見えている場合は
--- タブバー上では Terminal という名前に置き換えます。
--- AI CLI が動いている場合は、その CLI 名を表示します。
-local generic_shell_titles = {
-    ["windows powershell"] = true,
-    ["powershell.exe"] = true,
-    ["pwsh.exe"] = true,
-    ["cmd.exe"] = true,
-    ["zsh"] = true,
-    ["-zsh"] = true,
-    ["bash"] = true,
-    ["-bash"] = true,
-    ["sh"] = true,
-    ["-sh"] = true,
-    ["fish"] = true,
-    ["-fish"] = true,
-}
-
-local cli_title_names = {
-    ["codex"] = "Codex",
-    ["codex.exe"] = "Codex",
-    ["claude"] = "ClaudeCode",
-    ["claude.exe"] = "ClaudeCode",
-}
-
-local cli_title_ai_cli_names = {
-    ["codex"] = "codex",
-    ["codex.exe"] = "codex",
-    ["claude"] = "claude",
-    ["claude.exe"] = "claude",
-}
-
-local ai_cli_display_names = {
-    codex = "Codex",
-    claude = "ClaudeCode",
-}
-
-local ai_cli_user_vars = {
-    ["codex"] = "codex",
-    ["claude"] = "claude",
-    ["claude-code"] = "claude",
-}
-
-local tab_context_display_names = {
-    expo = "Expo",
-}
-
-local tab_context_user_vars = {
-    ["expo"] = "expo",
-}
-
-local MAX_TAB_CWD_COLUMNS = 24
-
-local function user_vars_ai_cli_name(vars)
-    if not vars then
-        return nil
-    end
-
-    local ai_cli = vars.AI_CLI
-    if not ai_cli or ai_cli == "" then
-        return nil
-    end
-
-    return ai_cli_user_vars[ai_cli:lower()]
-end
-
-local function user_vars_tab_context_name(vars)
-    if not vars then
-        return nil
-    end
-
-    local tab_context = vars.TAB_CONTEXT
-    if not tab_context or tab_context == "" then
-        return nil
-    end
-
-    return tab_context_user_vars[tab_context:lower()]
-end
-
-local function decode_uri_component(value)
-    return value:gsub("%%(%x%x)", function(hex)
-        return string.char(tonumber(hex, 16))
-    end)
-end
-
-local function cwd_basename(cwd)
-    if not cwd then
-        return nil
-    end
-
-    local path = nil
-    local ok, file_path = pcall(function()
-        return cwd.file_path
-    end)
-
-    if ok and type(file_path) == "string" and file_path ~= "" then
-        path = file_path
-    else
-        path = tostring(cwd)
-    end
-
-    if not path or path == "" then
-        return nil
-    end
-
-    path = decode_uri_component(path)
-    path = path:gsub("[/\\]+$", "")
-
-    local name = path:match("([^/\\]+)$")
-    if not name or name == "" then
-        return nil
-    end
-
-    return wezterm.truncate_right(name, MAX_TAB_CWD_COLUMNS)
-end
-
-local function tab_context_cwd_name(vars)
-    if not vars then
-        return nil
-    end
-
-    local cwd_name = vars.TAB_CONTEXT_CWD_NAME
-    if not cwd_name or cwd_name == "" then
-        return nil
-    end
-
-    return wezterm.truncate_right(cwd_name, MAX_TAB_CWD_COLUMNS)
-end
-
-local function titled_context_tab_title(display_name, active_pane, cwd_name)
-    if not cwd_name then
-        cwd_name = cwd_basename(active_pane.current_working_dir)
-    end
-
-    if not cwd_name then
-        return display_name
-    end
-
-    return display_name .. " - " .. cwd_name
-end
-
-local function ai_cli_tab_title(ai_cli_name, active_pane)
-    local display_name = ai_cli_display_names[ai_cli_name] or "Terminal"
-    return titled_context_tab_title(display_name, active_pane)
-end
-
-local function tab_context_title(tab_context_name, active_pane)
-    local display_name = tab_context_display_names[tab_context_name] or "Terminal"
-    local cwd_name = tab_context_cwd_name(active_pane.user_vars)
-    return titled_context_tab_title(display_name, active_pane, cwd_name)
-end
-
-local function get_tab_title(tab_info)
-    local title = tab_info.tab_title
-
-    if title and #title > 0 then
-        return title
-    end
-
-    local ai_cli_name = user_vars_ai_cli_name(tab_info.active_pane.user_vars)
-    if ai_cli_name then
-        return ai_cli_tab_title(ai_cli_name, tab_info.active_pane)
-    end
-
-    local tab_context_name = user_vars_tab_context_name(tab_info.active_pane.user_vars)
-    if tab_context_name then
-        return tab_context_title(tab_context_name, tab_info.active_pane)
-    end
-
-    title = tab_info.active_pane.title
-    if not title or title == "" then
-        return "Terminal"
-    end
-
-    local normalized_title = title:lower()
-
-    if generic_shell_titles[normalized_title] then
-        return "Terminal"
-    end
-
-    if cli_title_names[normalized_title] then
-        local title_ai_cli_name = cli_title_ai_cli_names[normalized_title]
-        if title_ai_cli_name then
-            return ai_cli_tab_title(title_ai_cli_name, tab_info.active_pane)
-        end
-        return cli_title_names[normalized_title]
-    end
-
-    return title
-end
-
--- タブバーの表示名を整えます。
-wezterm.on("format-tab-title", function(tab)
-    return get_tab_title(tab)
-end)
+title.apply()
 
 -- 前回保存された tab / cwd だけを GUI 起動時に復元します。
 -- コマンドや実行中プロセスは再実行しません。
@@ -231,287 +42,6 @@ end)
 wezterm.on("update-status", function()
     session.save_periodically(wezterm)
 end)
-
--- F3 ランチャーに表示する起動候補を作ります。
--- Windows では PowerShell / cmd / WSL をまとめて選べるようにします。
-local function build_launch_menu(wsl_domains)
-    if not is_windows then
-        return {}
-    end
-
-    local launch_menu = {
-        {
-            label = "PowerShell 7",
-            domain = { DomainName = "local" },
-            args = { "pwsh.exe", "-NoLogo" },
-        },
-        {
-            label = "Windows PowerShell",
-            domain = { DomainName = "local" },
-            args = { "powershell.exe", "-NoLogo" },
-        },
-        {
-            label = "Command Prompt",
-            domain = { DomainName = "local" },
-            args = { "cmd.exe" },
-        },
-    }
-
-    -- WezTerm が検出した WSL distro も同じランチャーに追加します。
-    for _, domain in ipairs(wsl_domains) do
-        table.insert(launch_menu, {
-            label = domain.name,
-            domain = { DomainName = domain.name },
-        })
-    end
-
-    return launch_menu
-end
-
--- Ctrl + C は、選択範囲がある時だけコピーとして扱います。
--- 選択がない時は通常通りターミナルへ Ctrl+C を送ります。
-local function copy_if_selected_or_send_ctrl_c(window, pane)
-    local has_selection = window:get_selection_text_for_pane(pane) ~= ""
-
-    if has_selection then
-        window:perform_action(act.CopyTo("Clipboard"), pane)
-        window:perform_action(act.ClearSelection, pane)
-        return
-    end
-
-    window:perform_action(act.SendKey({ key = "c", mods = "CTRL" }), pane)
-end
-
--- 右クリックは、選択中ならコピー、未選択なら貼り付けにします。
--- Windows Terminal に近い操作感に寄せるための補助関数です。
-local function copy_if_selected_or_paste(window, pane)
-    local has_selection = window:get_selection_text_for_pane(pane) ~= ""
-
-    if has_selection then
-        window:perform_action(act.CopyTo("Clipboard"), pane)
-        window:perform_action(act.ClearSelection, pane)
-        return
-    end
-
-    window:perform_action(act.PasteFrom("Clipboard"), pane)
-end
-
--- 実行ファイルのパスからファイル名だけを取り出します。
--- Windows と POSIX の両方の区切り文字に対応します。
-local function basename(path)
-    if not path or path == "" then
-        return nil
-    end
-
-    return path:match("([^/\\]+)$")
-end
-
--- macOS / Linux の shell 候補をランチャーに出す前に、
--- 実際にそのファイルが存在するかを確認します。
-local function file_exists(path)
-    if not path or path == "" then
-        return false
-    end
-
-    local file = io.open(path, "r")
-    if file then
-        file:close()
-        return true
-    end
-
-    return false
-end
-
--- macOS / Linux では SHELL と代表的な shell をランチャーへ追加します。
--- 同じ起動コマンドが重複しないように seen_args で管理します。
-local function append_posix_shell_launchers(launch_menu)
-    local login_shell = os.getenv("SHELL")
-    local seen_args = {}
-
-    local function add_shell(path, label)
-        if not file_exists(path) then
-            return
-        end
-
-        local key = path .. "\0-l"
-        if seen_args[key] then
-            return
-        end
-
-        seen_args[key] = true
-        table.insert(launch_menu, {
-            label = label,
-            args = { path, "-l" },
-        })
-    end
-
-    if login_shell and login_shell ~= "" then
-        local shell_name = basename(login_shell) or "Login Shell"
-        add_shell(login_shell, shell_name .. " (login)")
-    end
-
-    add_shell("/bin/zsh", "zsh")
-    add_shell("/bin/bash", "bash")
-    add_shell("/bin/sh", "sh")
-end
-
--- process info から、Codex / Claude Code のどちらが実行中か判定します。
--- 実行ファイル名だけでなく、Node.js 経由の argv も見ます。
-local function process_ai_cli_name(info)
-    local exe = basename(info.executable)
-    if exe then
-        exe = exe:lower()
-        if exe == "codex" or exe == "codex.exe" then
-            return "codex"
-        end
-        if exe == "claude" or exe == "claude.exe" then
-            return "claude"
-        end
-    end
-
-    -- npm CLI は node 経由で起動される場合があるため、
-    -- argv 側の package path も見て判定する。
-    if info.argv then
-        for _, arg in ipairs(info.argv) do
-            local lower = arg:lower()
-            if lower:find("@openai/codex", 1, true)
-                or lower:find("codex.js", 1, true) then
-                return "codex"
-            end
-            if lower:find("claude-code", 1, true)
-                or lower:find("@anthropic-ai", 1, true) then
-                return "claude"
-            end
-        end
-    end
-
-    return nil
-end
-
--- PowerShell profile などから AI_CLI user var が設定されている場合は、
--- process tree よりもその明示的な状態を優先します。
-local function user_var_ai_cli_name(pane)
-    return user_vars_ai_cli_name(pane:get_user_vars())
-end
-
--- 判定結果を pane 単位で短時間だけキャッシュし、
--- Windows ConPTY 側で foreground や祖先の取得が一時的に失敗したときに、
--- 直前の確定結果をフォールバックとして再利用するための入れ物です。
-local ai_cli_detection_cache = {}
-local AI_CLI_DETECTION_TTL_SECONDS = 2
-
-local function remember_ai_cli_detection(pane_id, result)
-    ai_cli_detection_cache[pane_id] = {
-        result = result,
-        at = os.time(),
-    }
-end
-
-local function recall_ai_cli_detection(pane_id)
-    local entry = ai_cli_detection_cache[pane_id]
-    if not entry then
-        return nil
-    end
-    if os.time() - entry.at > AI_CLI_DETECTION_TTL_SECONDS then
-        return nil
-    end
-    return entry.result
-end
-
--- AI CLI は MCP サーバーなど複数の子プロセスを同時に抱える。
--- Windows の ConPTY には tty foreground の概念がないため、
--- pane:get_foreground_process_info() は一番奥の子孫 (= MCP サーバー)
--- を返すことがある。ppid を辿り、祖先に Codex / Claude Code があれば
--- AI CLI が動いているとみなす。
--- 祖先取得や foreground 取得が失敗した場合は、直近 2 秒以内に得た
--- 確定結果を再利用することで、一過性の取得失敗による誤判定を防ぐ。
-local function current_ai_cli_name(pane)
-    local pane_id = pane:pane_id()
-    local user_var_cli = user_var_ai_cli_name(pane)
-
-    if user_var_cli then
-        remember_ai_cli_detection(pane_id, user_var_cli)
-        return user_var_cli
-    end
-
-    local info = pane:get_foreground_process_info()
-
-    if info == nil then
-        local cached = recall_ai_cli_detection(pane_id)
-        if cached ~= nil then
-            return cached
-        end
-        return nil
-    end
-
-    local depth = 0
-    while info and depth < 16 do
-        local cli_name = process_ai_cli_name(info)
-        if cli_name then
-            remember_ai_cli_detection(pane_id, cli_name)
-            return cli_name
-        end
-        if not info.ppid or info.ppid <= 0 then
-            remember_ai_cli_detection(pane_id, false)
-            return nil
-        end
-        local parent = wezterm.procinfo.get_info_for_pid(info.ppid)
-        if parent == nil then
-            -- 祖先取得の失敗は不確定として扱い、直近の判定があればそれを優先する。
-            local cached = recall_ai_cli_detection(pane_id)
-            if cached ~= nil then
-                return cached
-            end
-            return nil
-        end
-        info = parent
-        depth = depth + 1
-    end
-
-    -- depth 上限に到達した場合も不確定として扱う。
-    local cached = recall_ai_cli_detection(pane_id)
-    if cached ~= nil then
-        return cached
-    end
-    return nil
-end
-
--- 現在の pane が AI CLI なら CLI ごとの専用入力を送り、
--- それ以外なら通常キーを送ります。
--- Enter と Ctrl+Enter の入れ替えをこの関数に集約しています。
-local function send_key_for_current_process(window, pane, cli_keys, default_key, default_mods)
-    local cli_name = current_ai_cli_name(pane)
-    local cli_key = cli_name and cli_keys[cli_name] or nil
-
-    if cli_key then
-        if cli_key.action then
-            window:perform_action(cli_key.action, pane)
-            return
-        end
-
-        window:perform_action(act.SendKey({
-            key = cli_key.key,
-            mods = cli_key.mods,
-        }), pane)
-        return
-    end
-
-    window:perform_action(act.SendKey({
-        key = default_key,
-        mods = default_mods,
-    }), pane)
-end
-
--- OS ごとにランチャー候補を組み立てます。
-local wsl_domains = {}
-local launch_menu = {}
-
-if is_windows then
-    wsl_domains = wezterm.default_wsl_domains()
-    launch_menu = build_launch_menu(wsl_domains)
-elseif is_macos then
-    append_posix_shell_launchers(launch_menu)
-end
 
 ----------------------------------------------------
 -- Reference
@@ -570,7 +100,7 @@ config.keys = {
         key = "Enter",
         mods = "NONE",
         action = wezterm.action_callback(function(window, pane)
-            send_key_for_current_process(window, pane, {
+            ai_cli.send_key_for_current_process(window, pane, {
                 claude = { key = "j", mods = "CTRL" },
             }, "Enter", "NONE")
         end),
@@ -581,7 +111,7 @@ config.keys = {
         key = "Enter",
         mods = "CTRL",
         action = wezterm.action_callback(function(window, pane)
-            send_key_for_current_process(window, pane, {
+            ai_cli.send_key_for_current_process(window, pane, {
                 codex = { key = "F12", mods = "NONE" },
                 claude = { key = "Enter", mods = "NONE" },
             }, "Enter", "CTRL")
@@ -598,7 +128,7 @@ config.keys = {
     {
         key = "c",
         mods = "CTRL",
-        action = wezterm.action_callback(copy_if_selected_or_send_ctrl_c),
+        action = wezterm.action_callback(clipboard.copy_if_selected_or_send_ctrl_c),
     },
     { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = false }) },
     { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
@@ -615,7 +145,7 @@ config.mouse_bindings = {
     {
         event = { Up = { streak = 1, button = "Right" } },
         mods = "NONE",
-        action = wezterm.action_callback(copy_if_selected_or_paste),
+        action = wezterm.action_callback(clipboard.copy_if_selected_or_paste),
     },
 }
 

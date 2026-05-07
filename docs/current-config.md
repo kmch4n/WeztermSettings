@@ -7,18 +7,27 @@
 ## ファイル構成
 
 - `wezterm.lua`
-  - 共通設定を定義します。
+  - 共通設定の入口です。
   - `local.lua` が存在する場合は、そのテーブルを `config` に上書き適用します。
+  - event 登録、key binding、mouse binding、window / appearance 設定をまとめます。
+- `title.lua`
+  - タブタイトル整形を担当します。
+- `ai_cli.lua`
+  - Codex / Claude Code の検出と Enter / Ctrl+Enter 変換を担当します。
+- `launcher.lua`
+  - OS ごとの launcher menu を生成します。
+- `clipboard.lua`
+  - `Ctrl + C` と右クリックのコピー/貼り付け補助を担当します。
+- `session.lua`
+  - 前回 session の tab / cwd だけを保存・復元します。
 - `local.lua`
   - マシン依存の上書き用です。
   - 現在は `default_cwd`、`initial_cols`、`initial_rows` を持てます。
 - `local.example.lua`
   - `local.lua` の雛形です。
-- `session.lua`
-  - 前回 session の tab / cwd だけを保存・復元します。
 
 WezTerm 公式 docs では複数ファイル構成自体はサポートされていますが、
-このリポジトリでは共通設定、ローカル上書き、session 補助の 3 層に分けています。
+このリポジトリでは共通設定の入口、機能別 module、ローカル上書き、session 補助に分けています。
 
 ## 現在の設定内容
 
