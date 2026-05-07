@@ -47,6 +47,13 @@ local cli_title_names = {
     ["claude.exe"] = "ClaudeCode",
 }
 
+local cli_title_ai_cli_names = {
+    ["codex"] = "codex",
+    ["codex.exe"] = "codex",
+    ["claude"] = "claude",
+    ["claude.exe"] = "claude",
+}
+
 local ai_cli_display_names = {
     codex = "Codex",
     claude = "ClaudeCode",
@@ -57,6 +64,8 @@ local ai_cli_user_vars = {
     ["claude"] = "claude",
     ["claude-code"] = "claude",
 }
+
+local MAX_TAB_CWD_COLUMNS = 24
 
 local function user_vars_ai_cli_name(vars)
     if not vars then
@@ -71,6 +80,54 @@ local function user_vars_ai_cli_name(vars)
     return ai_cli_user_vars[ai_cli:lower()]
 end
 
+local function decode_uri_component(value)
+    return value:gsub("%%(%x%x)", function(hex)
+        return string.char(tonumber(hex, 16))
+    end)
+end
+
+local function cwd_basename(cwd)
+    if not cwd then
+        return nil
+    end
+
+    local path = nil
+    local ok, file_path = pcall(function()
+        return cwd.file_path
+    end)
+
+    if ok and type(file_path) == "string" and file_path ~= "" then
+        path = file_path
+    else
+        path = tostring(cwd)
+    end
+
+    if not path or path == "" then
+        return nil
+    end
+
+    path = decode_uri_component(path)
+    path = path:gsub("[/\\]+$", "")
+
+    local name = path:match("([^/\\]+)$")
+    if not name or name == "" then
+        return nil
+    end
+
+    return wezterm.truncate_right(name, MAX_TAB_CWD_COLUMNS)
+end
+
+local function ai_cli_tab_title(ai_cli_name, active_pane)
+    local display_name = ai_cli_display_names[ai_cli_name] or "Terminal"
+    local cwd_name = cwd_basename(active_pane.current_working_dir)
+
+    if not cwd_name then
+        return display_name
+    end
+
+    return display_name .. " - " .. cwd_name
+end
+
 local function get_tab_title(tab_info)
     local title = tab_info.tab_title
 
@@ -80,7 +137,7 @@ local function get_tab_title(tab_info)
 
     local ai_cli_name = user_vars_ai_cli_name(tab_info.active_pane.user_vars)
     if ai_cli_name then
-        return ai_cli_display_names[ai_cli_name] or "Terminal"
+        return ai_cli_tab_title(ai_cli_name, tab_info.active_pane)
     end
 
     title = tab_info.active_pane.title
@@ -95,6 +152,10 @@ local function get_tab_title(tab_info)
     end
 
     if cli_title_names[normalized_title] then
+        local title_ai_cli_name = cli_title_ai_cli_names[normalized_title]
+        if title_ai_cli_name then
+            return ai_cli_tab_title(title_ai_cli_name, tab_info.active_pane)
+        end
         return cli_title_names[normalized_title]
     end
 

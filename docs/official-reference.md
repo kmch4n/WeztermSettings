@@ -41,7 +41,16 @@ WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日�
   - pane に設定された user var を Lua 側で読み取れることを確認できます。
 - `PaneInformation`
   - <https://wezterm.org/config/lua/PaneInformation.html>
-  - `format-tab-title` に渡される active pane snapshot から `title` と `user_vars` を読めることを確認できます。
+  - `format-tab-title` に渡される active pane snapshot から `title`、`user_vars`、`current_working_dir` を読めることを確認できます。
+- `pane:get_current_working_dir()`
+  - <https://wezterm.org/config/lua/pane/get_current_working_dir.html>
+  - current working directory が URI string または Url object として返り、取得できない場合は `nil` になることを確認できます。
+- `Url object`
+  - <https://wezterm.org/config/lua/wezterm.url/Url.html>
+  - Url object の `file_path` field で percent-encoded path を file path として取り出せることを確認できます。
+- `wezterm.truncate_right`
+  - <https://wezterm.org/config/lua/wezterm/truncate_right.html>
+  - タブタイトル上の作業ディレクトリ名を表示幅ベースで短くできることを確認できます。
 - `gui-startup`
   - <https://wezterm.org/config/lua/gui-events/gui-startup.html>
   - GUI 起動時に最初の window や pane を生成できることを確認できます。

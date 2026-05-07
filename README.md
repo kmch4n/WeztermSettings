@@ -35,7 +35,7 @@
 - ウィンドウ close ボタンは確認なし
 - `Ctrl + Shift + W` でのタブ close は確認あり
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
-- タブタイトルの shell 名や `codex` / `claude` は `Terminal` 表示に寄せる
+- タブタイトルの shell 名は `Terminal` 表示に寄せ、AI CLI は `Codex - wezterm` のように CLI 名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
 - Codex 実行中は
   - `Enter` を通常の `Enter`
@@ -55,8 +55,9 @@
   - `local.lua` が存在する場合だけ読み込み、共通設定をローカル値で上書きします。
 - タブタイトル整形
   - shell 名など、タブ名として情報量が低いものを `Terminal` に寄せます。
-  - Codex / Claude Code は、認識できる場合は `Codex` / `ClaudeCode` と表示します。
-  - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex` と表示します。
+  - Codex / Claude Code は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
+  - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。
+  - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
 - launcher 生成
   - `build_launch_menu` で Windows 用の PowerShell / Command Prompt / WSL 候補を作ります。
   - `append_posix_shell_launchers` で macOS / Linux 用の login shell 候補を作ります。

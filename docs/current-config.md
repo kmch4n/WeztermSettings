@@ -33,8 +33,10 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 明示的なタブタイトルがあればそれを優先します。
   - そうでなければアクティブ pane のタイトルを使います。
   - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`zsh`、`bash`、`sh`、`fish` などの既定タイトルは `Terminal` に置き換えます。
-  - `codex` / `claude` など AI CLI を認識できる場合は `Codex` / `ClaudeCode` に置き換えます。
-  - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex` / `ClaudeCode` に置き換えます。
+  - `codex` / `claude` など AI CLI を認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名に置き換えます。
+  - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` だけを表示します。
+  - 作業ディレクトリ名は 24 columns までに切り詰めます。
+  - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex - <directory>` / `ClaudeCode - <directory>` に置き換えます。
 
 ### 起動・既定値
 
