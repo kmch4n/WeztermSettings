@@ -7,7 +7,7 @@
 - 右クリックのコピー/ペースト挙動をシンプルにする
 - Codex 実行中だけ WezTerm 側で `Enter` 系の入力を入れ替える
 - Codex は Codex TUI 側の keymap と WezTerm 側の物理キー変換を組み合わせる
-- PowerShell profile から WezTerm pane に Codex / Claude 実行状態を通知する
+- PowerShell profile から WezTerm pane に Codex / Claude / Expo 実行状態を通知する
 - ローカル環境依存の値は `local.lua` に逃がす
 
 ## ファイル構成
@@ -35,7 +35,7 @@
 - ウィンドウ close ボタンは確認なし
 - `Ctrl + Shift + W` でのタブ close は確認あり
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
-- タブタイトルの shell 名は `Terminal` 表示に寄せ、AI CLI は `Codex - wezterm` のように CLI 名と作業ディレクトリ名を表示
+- タブタイトルの shell 名は `Terminal` 表示に寄せ、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
 - Codex 実行中は
   - `Enter` を通常の `Enter`
@@ -56,6 +56,7 @@
 - タブタイトル整形
   - shell 名など、タブ名として情報量が低いものを `Terminal` に寄せます。
   - Codex / Claude Code は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
+  - `npx expo ...` は、PowerShell profile から `TAB_CONTEXT` と起動時の作業ディレクトリ名が設定される場合に `Expo - SnowLog` のように表示します。
   - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。
   - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
 - launcher 生成
@@ -83,9 +84,11 @@
 ## PowerShell 連携
 
 `C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`codex` / `claude` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
+また、`npx expo ...` 実行時だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を設定します。
 
 これにより、Windows ConPTY が foreground process を `pwsh.exe` として返す場合でも、WezTerm 側は AI CLI 実行中だと判定できます。
 Codex は npm の `codex.ps1` 経由だと foreground が `node.exe` になることがあるため、profile wrapper では同梱 native `codex.exe` を優先して起動します。
+Expo は npm / npx 経由だと foreground や pane title が `node.exe` や `C:\Windows\system32` に寄ることがあるため、`TAB_CONTEXT` と起動時の作業ディレクトリ名を優先してタブ名を決めます。
 
 既に開いている shell では、次のどちらかが必要です。
 

@@ -34,9 +34,12 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - そうでなければアクティブ pane のタイトルを使います。
   - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`zsh`、`bash`、`sh`、`fish` などの既定タイトルは `Terminal` に置き換えます。
   - `codex` / `claude` など AI CLI を認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名に置き換えます。
-  - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` だけを表示します。
+  - `TAB_CONTEXT=expo` が設定されている pane では、`npx expo ...` 実行中のタブを `Expo - SnowLog` のように表示します。
+  - Expo タブでは、PowerShell profile が渡す起動時の作業ディレクトリ名を優先し、取れない場合だけ WezTerm の `current_working_dir` に fallback します。
+  - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` / `Expo` だけを表示します。
   - 作業ディレクトリ名は 24 columns までに切り詰めます。
   - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex - <directory>` / `ClaudeCode - <directory>` に置き換えます。
+  - `TAB_CONTEXT` user var が設定されている pane では、Expo CLI 由来の `node.exe` や `C:\Windows\system32` 表示を `Expo - <directory>` に置き換えます。
 
 ### 起動・既定値
 
@@ -91,6 +94,7 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - プロセス情報の取得が一時的に失敗した場合は、直近 2 秒以内に確定した判定結果を pane 単位で再利用し、Enter / Ctrl+Enter の取り違えを防ぎます。
   - Windows では PowerShell profile の `codex` / `claude` wrapper が、実行中だけ `AI_CLI` user var を設定します。
   - Codex wrapper は、タブタイトルや foreground process が `node.exe` に寄らないよう、npm wrapper より同梱 native `codex.exe` を優先します。
+  - Windows では PowerShell profile の `npx` wrapper が、`npx expo ...` 実行中だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を user var に設定します。
 
 ### マウス
 
