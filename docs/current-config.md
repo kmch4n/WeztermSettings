@@ -55,7 +55,7 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - `wezterm start --cwd <path>` や `wezterm start -- <command>` のように明示起動条件がある場合は復元しません。
   - 復元するのは shell tab と cwd だけです。実行中コマンドは再実行しません。
 - `update-status`
-  - 終了直前イベントに依存せず、60 秒ごとに session snapshot を保存します。
+  - 終了直前イベントに依存せず、15 秒ごとに session snapshot を保存します。
   - 保存対象は workspace、window、tab、active tab index、明示 tab title、active pane の cwd です。
 
 ### 起動・既定値
@@ -86,7 +86,8 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 
 - 保存ファイルは `session-state.json` です。
   - Git 管理対象外です。
-  - `wezterm.config_dir` 直下に作られます。
+  - Windows では `%LOCALAPPDATA%\wezterm\session-state.json` に作られます。
+  - 過去の `wezterm.config_dir\session-state.json` は読み取り fallback として扱います。
 - 復元対象
   - window / workspace
   - tab

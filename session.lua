@@ -3,13 +3,38 @@
 local M = {}
 
 local STATE_VERSION = 1
-local SAVE_INTERVAL_SECONDS = 60
+local SAVE_INTERVAL_SECONDS = 15
 local MAX_RESTORED_TABS_PER_WINDOW = 20
 
 local last_save_at = 0
 local restore_attempted = false
 
+local function is_windows(wezterm)
+    return wezterm.target_triple:find("windows", 1, true) ~= nil
+end
+
+local function state_directory(wezterm)
+    if is_windows(wezterm) then
+        local local_app_data = os.getenv("LOCALAPPDATA")
+        if local_app_data and local_app_data ~= "" then
+            return local_app_data .. "\\wezterm"
+        end
+    end
+
+    local xdg_state_home = os.getenv("XDG_STATE_HOME")
+    if xdg_state_home and xdg_state_home ~= "" then
+        return xdg_state_home .. "/wezterm"
+    end
+
+    return wezterm.home_dir .. "/.local/state/wezterm"
+end
+
 local function state_path(wezterm)
+    local separator = is_windows(wezterm) and "\\" or "/"
+    return state_directory(wezterm) .. separator .. "session-state.json"
+end
+
+local function legacy_state_path(wezterm)
     return wezterm.config_dir .. "/session-state.json"
 end
 
@@ -36,8 +61,37 @@ local function write_file(path, content)
     return true
 end
 
-local function directory_exists(wezterm, path)
+local function decode_uri_component(value)
+    return value:gsub("%%(%x%x)", function(hex)
+        return string.char(tonumber(hex, 16))
+    end)
+end
+
+local function normalize_cwd_path(wezterm, path)
     if not path or path == "" then
+        return nil
+    end
+
+    path = decode_uri_component(path)
+
+    if is_windows(wezterm) then
+        if path:match("^file:///[A-Za-z]:") then
+            path = path:sub(9)
+        elseif path:match("^file:/[A-Za-z]:") then
+            path = path:sub(7)
+        end
+
+        if path:match("^/[A-Za-z]:[/\\]") then
+            path = path:sub(2)
+        end
+    end
+
+    return path
+end
+
+local function directory_exists(wezterm, path)
+    path = normalize_cwd_path(wezterm, path)
+    if not path then
         return false
     end
 
@@ -57,7 +111,7 @@ local function cwd_to_path(wezterm, cwd)
         return cwd.file_path
     end)
     if ok and type(file_path) == "string" and file_path ~= "" then
-        return file_path
+        return normalize_cwd_path(wezterm, file_path)
     end
 
     local cwd_text = tostring(cwd)
@@ -68,11 +122,11 @@ local function cwd_to_path(wezterm, cwd)
     if cwd_text:find("file:", 1, true) == 1 and wezterm.url and wezterm.url.parse then
         local parse_ok, parsed = pcall(wezterm.url.parse, cwd_text)
         if parse_ok and parsed and parsed.file_path and parsed.file_path ~= "" then
-            return parsed.file_path
+            return normalize_cwd_path(wezterm, parsed.file_path)
         end
     end
 
-    return cwd_text
+    return normalize_cwd_path(wezterm, cwd_text)
 end
 
 local function active_pane_for_tab(tab)
@@ -149,6 +203,10 @@ end
 local function load_state(wezterm)
     local content = read_file(state_path(wezterm))
     if not content or content == "" then
+        content = read_file(legacy_state_path(wezterm))
+    end
+
+    if not content or content == "" then
         return nil
     end
 
@@ -190,9 +248,14 @@ local function restorable_tabs(wezterm, window_state)
             break
         end
 
-        if type(tab) == "table" and directory_exists(wezterm, tab.cwd) then
+        local cwd = nil
+        if type(tab) == "table" then
+            cwd = normalize_cwd_path(wezterm, tab.cwd)
+        end
+
+        if cwd and directory_exists(wezterm, cwd) then
             table.insert(tabs, {
-                cwd = tab.cwd,
+                cwd = cwd,
                 title = tab.title,
                 index = tab.index,
             })

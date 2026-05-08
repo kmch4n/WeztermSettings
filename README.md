@@ -47,7 +47,7 @@
 - ウィンドウ close ボタンは確認なし
 - `Ctrl + Shift + W` でのタブ close も確認なし
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
-- 60 秒ごとに tab / cwd の軽量 snapshot を `session-state.json` に保存
+- 15 秒ごとに tab / cwd の軽量 snapshot を config dir 外の `session-state.json` に保存
 - 次回 GUI 起動時に前回 snapshot から tab と cwd だけを復元
 - タブタイトルの shell 名は `Terminal` 表示に寄せ、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
@@ -74,7 +74,7 @@
   - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。
   - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
 - `session.lua`
-  - `session.lua` が 60 秒ごとに現在の window / tab / cwd を `session-state.json` に保存します。
+  - `session.lua` が 15 秒ごとに現在の window / tab / cwd を config dir 外の `session-state.json` に保存します。
   - WezTerm の GUI 起動時に、保存されていた cwd ごとに shell tab を開き直します。
   - 実行中コマンド、pane 分割、scrollback、SSH 接続は復元しません。
 - `launcher.lua`
