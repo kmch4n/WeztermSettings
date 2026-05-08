@@ -94,17 +94,6 @@ config.show_tab_index_in_tab_bar = false
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
-    -- Enter は、Codex では通常の Enter のまま送ります。
-    -- Claude Code では Ctrl+J として送ります。
-    {
-        key = "Enter",
-        mods = "NONE",
-        action = wezterm.action_callback(function(window, pane)
-            ai_cli.send_key_for_current_process(window, pane, {
-                claude = { key = "j", mods = "CTRL" },
-            }, "Enter", "NONE")
-        end),
-    },
     -- Ctrl+Enter は、Codex の時だけ F12 として送ります。
     -- それ以外では Ctrl+Enter をそのままアプリケーションへ渡します。
     {
@@ -133,6 +122,21 @@ config.keys = {
     { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = false }) },
     { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
 }
+
+-- macOS では IME の変換確定 Enter と通常 Enter の区別が難しいため、
+-- Enter 単体は WezTerm 側で捕まえず、アプリケーションへ直接渡します。
+-- Windows では従来どおり Claude Code 向けの Enter 入れ替えを維持します。
+if not is_macos then
+    table.insert(config.keys, 3, {
+        key = "Enter",
+        mods = "NONE",
+        action = wezterm.action_callback(function(window, pane)
+            ai_cli.send_key_for_current_process(window, pane, {
+                claude = { key = "j", mods = "CTRL" },
+            }, "Enter", "NONE")
+        end),
+    })
+end
 
 -- 右クリックの Down では何もせず、Up のタイミングでコピー/貼り付けを判定します。
 -- Down で処理すると選択操作と衝突しやすいためです。
