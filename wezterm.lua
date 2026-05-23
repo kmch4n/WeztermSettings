@@ -183,8 +183,10 @@ end
 -- Appearance
 ----------------------------------------------------
 
--- ターミナルで使うフォントサイズを 10 に設定します。
-config.font_size = 10
+-- ターミナルで使うフォントサイズは local.lua 側で上書きできます。
+if not config.font_size then
+    config.font_size = 10
+end
 
 -- 背景を少しだけ透過し、うっすら背後が見えるようにします。
 config.window_background_opacity = 0.96

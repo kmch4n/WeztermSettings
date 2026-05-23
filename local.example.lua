@@ -39,4 +39,5 @@ return {
     default_cwd = default_cwd(),
     initial_cols = 120,
     initial_rows = 28,
+    font_size = 10,
 }
