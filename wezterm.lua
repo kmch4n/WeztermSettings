@@ -114,6 +114,17 @@ config.keys = {
             flags = "FUZZY|LAUNCH_MENU_ITEMS|TABS|WORKSPACES|DOMAINS",
         }),
     },
+    -- Ctrl+F3 で WSL distro を検出し直し、ランチャーの一覧を更新します。
+    -- 検出は wsl.exe の同期実行なので、起動時ではなくここで明示的に行います。
+    {
+        key = "F3",
+        mods = "CTRL",
+        action = wezterm.action_callback(function(window)
+            if launcher.refresh_wsl_domains(window) then
+                wezterm.reload_configuration()
+            end
+        end),
+    },
     {
         key = "c",
         mods = "CTRL",
