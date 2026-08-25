@@ -17,6 +17,8 @@
 - `official-reference.md`
   - 現行設定の正当性確認に使った公式リンク集です。
   - 変更前に一次情報へ飛ぶための入口です。
+- `remote-ai-cli.md`
+  - SSH / tmux内のCodex・Claude Codeを認識させるremote Bash設定です。
 - `reference/README.md`
   - 網羅 reference の入口です。
   - 公式 `Config Options` index ベースの一覧と、index 外の重要設定を辿れます。

@@ -133,6 +133,8 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - Windows では PowerShell profile の `codex` / `claude` wrapper が、実行中だけ `AI_CLI` user var を設定します。
   - Codex wrapper は、タブタイトルや foreground process が `node.exe` に寄らないよう、npm wrapper より同梱 native `codex.exe` を優先します。
   - Windows では PowerShell profile の `npx` wrapper が、`npx expo ...` 実行中だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を user var に設定します。
+  - SSH先のBashでは`~/.config/wezterm/wezterm-ai-cli.bash`が`codex` / `claude`をwrapし、同じ`AI_CLI` user varを通知します。
+  - tmux内ではDCS passthroughを使い、`allow-passthrough on`を前提とします。
 
 ### マウス
 

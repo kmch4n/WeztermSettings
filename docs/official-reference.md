@@ -36,6 +36,7 @@ WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日�
 - User Vars
   - <https://wezterm.org/recipes/passing-data.html>
   - pane 内のアプリケーションから OSC 1337 `SetUserVar` escape sequence で WezTerm の Lua 設定へ状態を渡せることを確認できます。
+  - tmux内ではDCS passthrough sequenceを使い、tmux 3.3以降では`allow-passthrough on`が必要です。
 - `pane:get_user_vars()`
   - <https://wezterm.org/config/lua/pane/get_user_vars.html>
   - pane に設定された user var を Lua 側で読み取れることを確認できます。

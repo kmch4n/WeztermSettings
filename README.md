@@ -26,6 +26,8 @@
   - タブタイトル整形
 - `session.lua`
   - 前回 session の tab / cwd 保存と復元
+- `shell/wezterm-ai-cli.bash`
+  - SSH先のBashからCodex / Claude Code実行状態を通知
 - `local.lua`
   - ローカル環境専用の上書き
   - Git 管理対象外
@@ -113,6 +115,14 @@ Expo は npm / npx 経由だと foreground や pane title が `node.exe` や `C:
 - 新しい WezTerm タブを開く
 - 既存 shell で `. $PROFILE` を実行してから `codex` / `claude` を起動し直す
 
+## SSH / tmux 連携
+
+SSH先ではローカルWezTermからremote processを直接検出できないため、
+`shell/wezterm-ai-cli.bash`から`AI_CLI` user varを通知します。
+
+Ubuntu / Bashへの導入方法とtmuxの`allow-passthrough`設定は
+[docs/remote-ai-cli.md](docs/remote-ai-cli.md)を参照してください。
+
 ## Docs
 
 - [docs/README.md](docs/README.md)
@@ -121,5 +131,7 @@ Expo は npm / npx 経由だと foreground や pane title が `node.exe` や `C:
   - 現在有効な設定の要約
 - [docs/official-reference.md](docs/official-reference.md)
   - 公式ドキュメントへの導線
+- [docs/remote-ai-cli.md](docs/remote-ai-cli.md)
+  - SSH / tmux内のCodex・Claude Code連携
 - [docs/reference/README.md](docs/reference/README.md)
   - 設定項目の厚い reference

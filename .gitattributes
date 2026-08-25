@@ -1,5 +1,6 @@
 * text=auto
 
+*.bash text eol=lf
 *.lua text eol=lf
 *.md text eol=lf
 *.toml text eol=lf
