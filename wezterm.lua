@@ -136,6 +136,15 @@ if not is_macos then
             }, "Enter", "NONE")
         end),
     })
+    table.insert(config.keys, 4, {
+        key = "Enter",
+        mods = "SHIFT",
+        action = wezterm.action_callback(function(window, pane)
+            ai_cli.send_key_for_current_process(window, pane, {
+                claude = { key = "j", mods = "CTRL" },
+            }, "Enter", "SHIFT")
+        end),
+    })
 end
 
 -- 右クリックの Down では何もせず、Up のタイミングでコピー/貼り付けを判定します。
