@@ -36,6 +36,8 @@
   - OS ごとの launcher menu を生成します。
 - `clipboard.lua`
   - コピー/貼り付け系の補助操作を担当します。
+- `smart_paste.lua`
+  - クリップボード画像をパスとして貼り付ける処理を担当します。
 - `session.lua`
   - 前回 session の tab / cwd 保存と復元を担当します。
 - `local.lua`

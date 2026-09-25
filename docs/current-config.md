@@ -18,6 +18,8 @@
   - OS ごとの launcher menu を生成します。
 - `clipboard.lua`
   - `Ctrl + C` と右クリックのコピー/貼り付け補助を担当します。
+- `smart_paste.lua`
+  - クリップボード画像を一時 PNG に保存し、そのパスを貼り付けます。
 - `session.lua`
   - 前回 session の tab / cwd だけを保存・復元します。
 - `local.lua`
@@ -115,6 +117,8 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 選択中テキストがあればコピーし、なければ通常の `Ctrl + C` を送ります。
 - `Ctrl + V`
   - クリップボード貼り付けを行います。
+  - クリップボードが画像だけなら一時 PNG に保存し、そのパスを貼り付けます。
+  - macOS では `Cmd + V` も同じ挙動です。
 - `Ctrl + Shift + W`
   - 確認なしで現在のタブを閉じます。
 - `Enter` / `Ctrl + Enter`

@@ -20,6 +20,8 @@
   - Codex / Claude Code の検出と `Enter` 系キー変換
 - `clipboard.lua`
   - `Ctrl + C` と右クリックのコピー/貼り付け補助
+- `smart_paste.lua`
+  - クリップボード画像を一時 PNG として保存し、そのパスを貼り付け
 - `launcher.lua`
   - OS ごとの launcher menu 生成
 - `title.lua`
@@ -46,6 +48,7 @@
 - Windows の launcher では PowerShell / Command Prompt / WSL を表示
 - macOS の launcher では login shell と標準 shell を表示
 - 右クリックは「選択があればコピー、なければ貼り付け」
+- `Ctrl + V` (macOS では `Cmd + V` も) はクリップボードが画像だけなら一時 PNG のパスを貼り付け
 - ウィンドウ close ボタンは確認なし
 - `Ctrl + Shift + W` でのタブ close も確認なし
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
@@ -85,6 +88,12 @@
 - `clipboard.lua`
   - `Ctrl + C` は選択中ならコピー、未選択なら割り込みとして送信します。
   - 右クリックは選択中ならコピー、未選択なら貼り付けです。
+- `smart_paste.lua`
+  - クリップボードにテキストがなく画像だけある場合、PNG に保存してパスを bracketed paste で送ります。Claude Code などに画像を渡せます。
+  - Windows では `%TEMP%\wezterm-clipboard-images`、macOS では `/tmp/wezterm-clipboard-images` に保存します。
+  - Windows の `%TEMP%` はシャットダウンで消えないため、GUI 起動時に現在のログオンより前の画像をバックグラウンドで削除します。
+  - WSL pane には `/mnt/c/...` 形式のパスを渡します。
+  - 判定のため貼り付けごとに PowerShell / `osascript` を起動するので、数百 ms の遅延があります。
 - `ai_cli.lua`
   - PowerShell profile の `codex` / `claude` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
   - user var がない場合は、`codex` / `claude` / `claude-code` の foreground process を見て、CLI 種別を判定します。

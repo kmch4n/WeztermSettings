@@ -6,6 +6,7 @@ local ai_cli = require("ai_cli")
 local clipboard = require("clipboard")
 local launcher = require("launcher")
 local session = require("session")
+local smart_paste = require("smart_paste")
 local title = require("title")
 
 -- 設定を書き込むためのオブジェクトを作成します。
@@ -33,6 +34,7 @@ title.apply()
 -- 前回保存された tab / cwd だけを GUI 起動時に復元します。
 -- コマンドや実行中プロセスは再実行しません。
 wezterm.on("gui-startup", function(cmd)
+    smart_paste.cleanup_stale_images()
     if not session.restore_on_startup(wezterm, cmd) then
         wezterm.mux.spawn_window(cmd or {})
     end
@@ -131,8 +133,14 @@ config.keys = {
         action = wezterm.action_callback(clipboard.copy_if_selected_or_send_ctrl_c),
     },
     { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentTab({ confirm = false }) },
-    { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") },
+    -- Ctrl+V はクリップボードが画像だけなら一時 PNG のパスを貼り付けます。
+    { key = "v", mods = "CTRL", action = wezterm.action_callback(smart_paste.paste) },
 }
+
+-- macOS の Cmd+V も同じく画像をパスとして貼り付けます。
+if is_macos then
+    table.insert(config.keys, { key = "v", mods = "CMD", action = wezterm.action_callback(smart_paste.paste) })
+end
 
 -- macOS では IME の変換確定 Enter と通常 Enter の区別が難しいため、
 -- Enter 単体は WezTerm 側で捕まえず、アプリケーションへ直接渡します。
