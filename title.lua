@@ -27,6 +27,8 @@ local cli_title_names = {
     ["codex.exe"] = "Codex",
     ["claude"] = "ClaudeCode",
     ["claude.exe"] = "ClaudeCode",
+    ["agy"] = "Antigravity",
+    ["agy.exe"] = "Antigravity",
 }
 
 local cli_title_ai_cli_names = {
@@ -34,17 +36,21 @@ local cli_title_ai_cli_names = {
     ["codex.exe"] = "codex",
     ["claude"] = "claude",
     ["claude.exe"] = "claude",
+    ["agy"] = "agy",
+    ["agy.exe"] = "agy",
 }
 
 local ai_cli_display_names = {
     codex = "Codex",
     claude = "ClaudeCode",
+    agy = "Antigravity",
 }
 
 local ai_cli_user_vars = {
     ["codex"] = "codex",
     ["claude"] = "claude",
     ["claude-code"] = "claude",
+    ["agy"] = "agy",
 }
 
 local tab_context_display_names = {

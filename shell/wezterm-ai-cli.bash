@@ -50,3 +50,7 @@ codex() {
 claude() {
     __wezterm_run_ai_cli "claude" "claude" "$@"
 }
+
+agy() {
+    __wezterm_run_ai_cli "agy" "agy" "$@"
+}

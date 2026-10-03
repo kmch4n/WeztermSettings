@@ -105,6 +105,7 @@ config.keys = {
             ai_cli.send_key_for_current_process(window, pane, {
                 codex = { key = "F12", mods = "NONE" },
                 claude = { key = "Enter", mods = "NONE" },
+                agy = { key = "Enter", mods = "NONE" },
             }, "Enter", "CTRL")
         end),
     },
@@ -152,6 +153,7 @@ if not is_macos then
         action = wezterm.action_callback(function(window, pane)
             ai_cli.send_key_for_current_process(window, pane, {
                 claude = { key = "j", mods = "CTRL" },
+                agy = { key = "j", mods = "CTRL" },
             }, "Enter", "NONE")
         end),
     })
@@ -161,6 +163,7 @@ if not is_macos then
         action = wezterm.action_callback(function(window, pane)
             ai_cli.send_key_for_current_process(window, pane, {
                 claude = { key = "j", mods = "CTRL" },
+                agy = { key = "j", mods = "CTRL" },
             }, "Enter", "SHIFT")
         end),
     })

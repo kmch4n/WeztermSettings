@@ -8,6 +8,7 @@ local ai_cli_user_vars = {
     ["codex"] = "codex",
     ["claude"] = "claude",
     ["claude-code"] = "claude",
+    ["agy"] = "agy",
 }
 
 -- 判定結果を pane 単位で短時間だけキャッシュし、
@@ -50,6 +51,9 @@ local function process_ai_cli_name(info)
         end
         if exe == "claude" or exe == "claude.exe" then
             return "claude"
+        end
+        if exe == "agy" or exe == "agy.exe" then
+            return "agy"
         end
     end
 
