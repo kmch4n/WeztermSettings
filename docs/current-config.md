@@ -116,6 +116,11 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 - `Ctrl + C`
   - 選択中テキストがあればコピーし、なければ通常の `Ctrl + C` を送ります。
 - `Ctrl + V`
+- `Ctrl + Shift + LeftArrow`
+  - 現在のタブを左へ並べ替えます。
+- `Ctrl + Shift + RightArrow`
+  - 現在のタブを右へ並べ替えます。
+  - 既定のペイン移動 (`ActivatePaneDirection`) を上書きします。
   - クリップボード貼り付けを行います。
   - クリップボードが画像だけなら一時 PNG に保存し、そのパスを貼り付けます。
   - macOS では `Cmd + V` も同じ挙動です。

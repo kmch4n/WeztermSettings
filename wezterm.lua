@@ -93,9 +93,13 @@ config.show_tab_index_in_tab_bar = false
 
 -- Ctrl + 左矢印で左隣のタブへ移動します。
 -- Ctrl + 右矢印で右隣のタブへ移動します。
+-- Ctrl + Shift + 左右矢印で、現在のタブ自体を左右へ並べ替えます。
+-- PageUp / PageDown がないキーボード向けに、既定のペイン移動を上書きします。
 config.keys = {
     { key = "LeftArrow", mods = "CTRL", action = act.ActivateTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL", action = act.ActivateTabRelative(1) },
+    { key = "LeftArrow", mods = "CTRL|SHIFT", action = act.MoveTabRelative(-1) },
+    { key = "RightArrow", mods = "CTRL|SHIFT", action = act.MoveTabRelative(1) },
     -- Ctrl+Enter は、Codex の時だけ F12 として送ります。
     -- それ以外では Ctrl+Enter をそのままアプリケーションへ渡します。
     {

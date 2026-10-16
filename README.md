@@ -44,6 +44,7 @@
 - macOS では WezTerm 既定の login shell をそのまま使用
 - 起動サイズは `local.lua` の `initial_cols` / `initial_rows` で環境ごとに上書き可能
 - `Ctrl + LeftArrow` / `Ctrl + RightArrow` でタブ移動
+- `Ctrl + Shift + LeftArrow` / `Ctrl + Shift + RightArrow` で現在のタブを左右へ並べ替え
 - `F3` で launcher を表示
 - Windows の launcher では PowerShell / Command Prompt / WSL を表示
 - macOS の launcher では login shell と標準 shell を表示
