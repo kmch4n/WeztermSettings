@@ -61,7 +61,36 @@ local tab_context_user_vars = {
     ["expo"] = "expo",
 }
 
+-- foreground process がこれらの場合は、ローカルの cwd ではなく SSH と表示します。
+local ssh_process_names = {
+    ["ssh"] = true,
+    ["ssh.exe"] = true,
+}
+
 local MAX_TAB_CWD_COLUMNS = 24
+
+-- 実行ファイルのフルパスがタイトルになっている場合に、ファイル名だけを取り出します。
+local function basename(path)
+    if not path or path == "" then
+        return nil
+    end
+
+    return path:match("([^/\\]+)$")
+end
+
+-- Windows の file URI ("/C:/Users/...") と home_dir ("C:\Users\...") を
+-- 比較できる形にそろえます。
+local function normalize_path(path)
+    path = path:gsub("\\", "/")
+    path = path:gsub("^/(%a:)", "%1")
+    path = path:gsub("/+$", "")
+    if wezterm.target_triple:find("windows", 1, true) then
+        path = path:lower()
+    end
+    return path
+end
+
+local normalized_home_dir = normalize_path(wezterm.home_dir)
 
 local function user_vars_ai_cli_name(vars)
     if not vars then
@@ -117,6 +146,10 @@ local function cwd_basename(cwd)
 
     path = decode_uri_component(path)
     path = path:gsub("[/\\]+$", "")
+
+    if normalize_path(path) == normalized_home_dir then
+        return "~"
+    end
 
     local name = path:match("([^/\\]+)$")
     if not name or name == "" then
@@ -179,15 +212,23 @@ function M.get(tab_info)
         return tab_context_title(tab_context_name, tab_info.active_pane)
     end
 
-    title = tab_info.active_pane.title
-    if not title or title == "" then
-        return "Terminal"
+    -- SSH 先の cwd は取得できず、ローカルの cwd を出すと誤解を招くため SSH とだけ表示します。
+    local process_name = basename(tab_info.active_pane.foreground_process_name)
+    if process_name and ssh_process_names[process_name:lower()] then
+        return "SSH"
     end
 
-    local normalized_title = title:lower()
+    title = tab_info.active_pane.title
+    if not title or title == "" then
+        return cwd_basename(tab_info.active_pane.current_working_dir) or "Terminal"
+    end
 
+    -- Store 版 pwsh などはタイトルに実行ファイルのフルパスを入れるため、ファイル名で判定します。
+    local normalized_title = (basename(title) or title):lower()
+
+    -- shell のタブは、見分けやすいように cwd の末尾フォルダ名を表示します。
     if generic_shell_titles[normalized_title] then
-        return "Terminal"
+        return cwd_basename(tab_info.active_pane.current_working_dir) or "Terminal"
     end
 
     if cli_title_names[normalized_title] then
@@ -205,6 +246,15 @@ function M.apply()
     -- タブバーの表示名を整えます。
     wezterm.on("format-tab-title", function(tab)
         return M.get(tab)
+    end)
+
+    -- Alt+Tab やタスクバーに出るウィンドウタイトルもタブ名にそろえます。
+    wezterm.on("format-window-title", function(tab, _, tabs)
+        local title = M.get(tab)
+        if #tabs > 1 then
+            return string.format("[%d/%d] %s", tab.tab_index + 1, #tabs, title)
+        end
+        return title
     end)
 end
 

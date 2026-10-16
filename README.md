@@ -55,7 +55,7 @@
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
 - 15 秒ごとに tab / cwd の軽量 snapshot を config dir 外の `session-state.json` に保存
 - 次回 GUI 起動時に前回 snapshot から tab と cwd だけを復元
-- タブタイトルの shell 名は `Terminal` 表示に寄せ、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
+- shell のタブは作業ディレクトリの末尾フォルダ名 (ホームは `~`)、SSH 実行中は `SSH` と表示し、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
 - Codex 実行中は
   - `Enter` を通常の `Enter`
@@ -74,7 +74,10 @@
 - `local.lua` の読み込み
   - `local.lua` が存在する場合だけ読み込み、共通設定をローカル値で上書きします。
 - `title.lua`
-  - shell 名など、タブ名として情報量が低いものを `Terminal` に寄せます。
+  - shell 名など、タブ名として情報量が低いものは作業ディレクトリの末尾フォルダ名に置き換えます。ホームディレクトリは `~`、取れない場合は `Terminal` です。
+  - Store 版 pwsh のようにタイトルが実行ファイルのフルパスでも、ファイル名で判定します。
+  - foreground process が `ssh` の間は、ローカルの cwd ではなく `SSH` と表示します。
+  - ウィンドウタイトル (Alt+Tab / タスクバー) もタブ名にそろえます。
   - Codex / Claude Code は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
   - `npx expo ...` は、PowerShell profile から `TAB_CONTEXT` と起動時の作業ディレクトリ名が設定される場合に `Expo - SnowLog` のように表示します。
   - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。

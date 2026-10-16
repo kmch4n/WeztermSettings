@@ -44,12 +44,17 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 - `format-tab-title`
   - 明示的なタブタイトルがあればそれを優先します。
   - そうでなければアクティブ pane のタイトルを使います。
-  - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`zsh`、`bash`、`sh`、`fish` などの既定タイトルは `Terminal` に置き換えます。
+  - `powershell.exe`、`pwsh.exe`、`cmd.exe`、`zsh`、`bash`、`sh`、`fish` などの既定タイトルは、作業ディレクトリの末尾フォルダ名に置き換えます。
+    - ホームディレクトリは `~`、作業ディレクトリが取れない場合は `Terminal` を表示します。
+    - Store 版 pwsh はタイトルに実行ファイルのフルパスを入れるため、パスの末尾のファイル名で判定します。
+  - foreground process が `ssh` / `ssh.exe` の間は、ローカルの cwd が誤解を招くため `SSH` と表示します。SSH 先で `AI_CLI` user var が届く場合はそちらを優先します。
   - `codex` / `claude` など AI CLI を認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名に置き換えます。
   - `TAB_CONTEXT=expo` が設定されている pane では、`npx expo ...` 実行中のタブを `Expo - SnowLog` のように表示します。
   - Expo タブでは、PowerShell profile が渡す起動時の作業ディレクトリ名を優先し、取れない場合だけ WezTerm の `current_working_dir` に fallback します。
   - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` / `Expo` だけを表示します。
   - 作業ディレクトリ名は 24 columns までに切り詰めます。
+- `format-window-title`
+  - ウィンドウタイトルを `format-tab-title` と同じ名前にそろえ、複数タブのときは `[2/4]` のような位置を前に付けます。
   - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex - <directory>` / `ClaudeCode - <directory>` に置き換えます。
   - `TAB_CONTEXT` user var が設定されている pane では、Expo CLI 由来の `node.exe` や `C:\Windows\system32` 表示を `Expo - <directory>` に置き換えます。
 - `gui-startup`
@@ -111,16 +116,16 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - 左隣のタブへ移動します。
 - `Ctrl + RightArrow`
   - 右隣のタブへ移動します。
-- `F3`
-  - launcher を開きます。
-- `Ctrl + C`
-  - 選択中テキストがあればコピーし、なければ通常の `Ctrl + C` を送ります。
-- `Ctrl + V`
 - `Ctrl + Shift + LeftArrow`
   - 現在のタブを左へ並べ替えます。
 - `Ctrl + Shift + RightArrow`
   - 現在のタブを右へ並べ替えます。
   - 既定のペイン移動 (`ActivatePaneDirection`) を上書きします。
+- `F3`
+  - launcher を開きます。
+- `Ctrl + C`
+  - 選択中テキストがあればコピーし、なければ通常の `Ctrl + C` を送ります。
+- `Ctrl + V`
   - クリップボード貼り付けを行います。
   - クリップボードが画像だけなら一時 PNG に保存し、そのパスを貼り付けます。
   - macOS では `Cmd + V` も同じ挙動です。
