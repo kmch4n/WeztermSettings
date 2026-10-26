@@ -1,6 +1,6 @@
-# AI
-.codex/
-.claude/
+# Agent instructions (AGENTS.md, .claude/CLAUDE.md) are tracked.
+# Keep only per-user agent settings out of Git.
+.claude/settings.local.json
 
 # local files
 local.lua
