@@ -212,9 +212,18 @@ function M.get(tab_info)
         return tab_context_title(tab_context_name, tab_info.active_pane)
     end
 
-    -- SSH 先の cwd は取得できず、ローカルの cwd を出すと誤解を招くため SSH とだけ表示します。
     local process_name = basename(tab_info.active_pane.foreground_process_name)
-    if process_name and ssh_process_names[process_name:lower()] then
+    process_name = process_name and process_name:lower()
+
+    -- profile wrapper を通らずに起動した AI CLI も、foreground process 名で判定します。
+    -- agy はタイトルを設定しないため、user var がないときはこの判定が頼りです。
+    local process_ai_cli_name = process_name and cli_title_ai_cli_names[process_name]
+    if process_ai_cli_name then
+        return ai_cli_tab_title(process_ai_cli_name, tab_info.active_pane)
+    end
+
+    -- SSH 先の cwd は取得できず、ローカルの cwd を出すと誤解を招くため SSH とだけ表示します。
+    if process_name and ssh_process_names[process_name] then
         return "SSH"
     end
 

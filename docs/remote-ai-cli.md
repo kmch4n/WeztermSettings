@@ -1,9 +1,9 @@
 # Remote AI CLI Integration
 
-SSH先で実行するCodex / Claude CodeをWezTerm側が認識するための設定です。
+SSH先で実行するCodex / Claude Code / Antigravity CLIをWezTerm側が認識するための設定です。
 
 ローカルWezTermから見えるprocess treeは`ssh.exe`までであり、remote側の
-`codex`や`claude`は直接検出できません。そのため、remote shellからOSC 1337
+`codex`や`claude`、`agy`は直接検出できません。そのため、remote shellからOSC 1337
 `SetUserVar`を送り、paneの`AI_CLI` user varを設定します。
 
 ## 対象
@@ -12,7 +12,8 @@ SSH先で実行するCodex / Claude CodeをWezTerm側が認識するための設
 - Bash
 - `codex resume`
 - `claude -r`
-- tmux内でのCodex / Claude Code実行
+- `agy`
+- tmux内でのCodex / Claude Code / Antigravity CLI実行
 
 ## 導入
 
@@ -50,6 +51,9 @@ source ~/.bashrc
 - `claude -r`
   - 起動前に`AI_CLI=claude`を通知します。
   - 終了後に`AI_CLI`をクリアします。
+- `agy`
+  - 起動前に`AI_CLI=agy`を通知します。
+  - 終了後に`AI_CLI`をクリアします。
 - tmux内
   - tmux用DCS passthrough sequenceへ自動的に切り替えます。
 
@@ -60,7 +64,7 @@ source ~/.bashrc
 - `base64`コマンドが必要です。
 - tmux 3.3以降では`allow-passthrough on`が必要です。
 - SSH先がBash以外の場合は、このintegrationをそのまま読み込めません。
-- `sudo codex`や`sudo claude`はshell functionを経由しないため対象外です。
+- `sudo codex`や`sudo claude`、`sudo agy`はshell functionを経由しないため対象外です。
 
 ## 公式参照
 

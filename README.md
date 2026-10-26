@@ -7,7 +7,7 @@
 - 右クリックのコピー/ペースト挙動をシンプルにする
 - Codex 実行中だけ WezTerm 側で `Enter` 系の入力を入れ替える
 - Codex は Codex TUI 側の keymap と WezTerm 側の物理キー変換を組み合わせる
-- PowerShell profile から WezTerm pane に Codex / Claude / Expo 実行状態を通知する
+- PowerShell profile から WezTerm pane に Codex / Claude / Antigravity CLI / Expo 実行状態を通知する
 - 前回終了前に開いていたタブと作業ディレクトリを復元する
 - ローカル環境依存の値は `local.lua` に逃がす
 
@@ -17,7 +17,7 @@
   - 共通設定の入口
   - 各モジュールを読み込み、イベント登録・キー設定・外観設定をまとめる
 - `ai_cli.lua`
-  - Codex / Claude Code の検出と `Enter` 系キー変換
+  - Codex / Claude Code / Antigravity CLI (`agy`) の検出と `Enter` 系キー変換
 - `clipboard.lua`
   - `Ctrl + C` と右クリックのコピー/貼り付け補助
 - `smart_paste.lua`
@@ -29,7 +29,7 @@
 - `session.lua`
   - 前回 session の tab / cwd 保存と復元
 - `shell/wezterm-ai-cli.bash`
-  - SSH先のBashからCodex / Claude Code実行状態を通知
+  - SSH先のBashからCodex / Claude Code / Antigravity CLI実行状態を通知
 - `local.lua`
   - ローカル環境専用の上書き
   - Git 管理対象外
@@ -55,14 +55,14 @@
 - Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
 - 15 秒ごとに tab / cwd の軽量 snapshot を config dir 外の `session-state.json` に保存
 - 次回 GUI 起動時に前回 snapshot から tab と cwd だけを復元
-- shell のタブは作業ディレクトリの末尾フォルダ名 (ホームは `~`)、SSH 実行中は `SSH` と表示し、Codex / Claude Code / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
+- shell のタブは作業ディレクトリの末尾フォルダ名 (ホームは `~`)、SSH 実行中は `SSH` と表示し、Codex / Claude Code / Antigravity CLI / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
 - `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
 - Codex 実行中は
   - `Enter` を通常の `Enter`
   - `Ctrl + Enter` を `F12`
-- Claude 実行中は
-  - `Enter` を `Ctrl + J`
-  - `Ctrl + Enter` を通常の `Enter`
+- Claude / Antigravity CLI 実行中は
+  - `Enter` / `Shift + Enter` を `Ctrl + J` (改行)
+  - `Ctrl + Enter` を通常の `Enter` (送信)
 - Codex は `~/.codex/config.toml` の native keymap で
   - 通常の `Enter` を newline
   - `F12` を submit
@@ -78,9 +78,10 @@
   - Store 版 pwsh のようにタイトルが実行ファイルのフルパスでも、ファイル名で判定します。
   - foreground process が `ssh` の間は、ローカルの cwd ではなく `SSH` と表示します。
   - ウィンドウタイトル (Alt+Tab / タスクバー) もタブ名にそろえます。
-  - Codex / Claude Code は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
+  - Codex / Claude Code / Antigravity CLI は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` / `Antigravity - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
+  - `AI_CLI` user var がない場合も、foreground process が `codex` / `claude` / `agy` ならその CLI として表示します。
   - `npx expo ...` は、PowerShell profile から `TAB_CONTEXT` と起動時の作業ディレクトリ名が設定される場合に `Expo - SnowLog` のように表示します。
-  - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` だけを表示します。
+  - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` / `Antigravity` だけを表示します。
   - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
 - `session.lua`
   - `session.lua` が 15 秒ごとに現在の window / tab / cwd を config dir 外の `session-state.json` に保存します。
@@ -99,9 +100,9 @@
   - WSL pane には `/mnt/c/...` 形式のパスを渡します。
   - 判定のため貼り付けごとに PowerShell / `osascript` を起動するので、数百 ms の遅延があります。
 - `ai_cli.lua`
-  - PowerShell profile の `codex` / `claude` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
-  - user var がない場合は、`codex` / `claude` / `claude-code` の foreground process を見て、CLI 種別を判定します。
-  - Claude Code の Enter 入れ替えは既存の挙動を維持します。
+  - PowerShell profile の `codex` / `claude` / `agy` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
+  - user var がない場合は、`codex` / `claude` / `claude-code` / `agy` の foreground process を見て、CLI 種別を判定します。
+  - Claude Code と Antigravity CLI は同じ Enter 入れ替えを使います。
   - Codex と Claude Code は Node.js 経由で起動する場合があるため、実行ファイル名だけでなく argv も確認します。
 - OS 別設定
   - Windows では WSL domain、OpenSSH agent、PowerShell 7 既定起動を明示します。
@@ -116,7 +117,7 @@
 
 ## PowerShell 連携
 
-`C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`codex` / `claude` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
+`C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`codex` / `claude` / `agy` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
 また、`npx expo ...` 実行時だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を設定します。
 
 これにより、Windows ConPTY が foreground process を `pwsh.exe` として返す場合でも、WezTerm 側は AI CLI 実行中だと判定できます。
@@ -126,7 +127,7 @@ Expo は npm / npx 経由だと foreground や pane title が `node.exe` や `C:
 既に開いている shell では、次のどちらかが必要です。
 
 - 新しい WezTerm タブを開く
-- 既存 shell で `. $PROFILE` を実行してから `codex` / `claude` を起動し直す
+- 既存 shell で `. $PROFILE` を実行してから `codex` / `claude` / `agy` を起動し直す
 
 ## SSH / tmux 連携
 

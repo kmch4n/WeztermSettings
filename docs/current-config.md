@@ -13,7 +13,7 @@
 - `title.lua`
   - タブタイトル整形を担当します。
 - `ai_cli.lua`
-  - Codex / Claude Code の検出と Enter / Ctrl+Enter 変換を担当します。
+  - Codex / Claude Code / Antigravity CLI (`agy`) の検出と Enter / Ctrl+Enter 変換を担当します。
 - `launcher.lua`
   - OS ごとの launcher menu を生成します。
 - `clipboard.lua`
@@ -48,10 +48,11 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
     - ホームディレクトリは `~`、作業ディレクトリが取れない場合は `Terminal` を表示します。
     - Store 版 pwsh はタイトルに実行ファイルのフルパスを入れるため、パスの末尾のファイル名で判定します。
   - foreground process が `ssh` / `ssh.exe` の間は、ローカルの cwd が誤解を招くため `SSH` と表示します。SSH 先で `AI_CLI` user var が届く場合はそちらを優先します。
-  - `codex` / `claude` など AI CLI を認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` のように CLI 名と作業ディレクトリ名に置き換えます。
+  - `codex` / `claude` / `agy` など AI CLI を認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` / `Antigravity - SnowLog` のように CLI 名と作業ディレクトリ名に置き換えます。
   - `TAB_CONTEXT=expo` が設定されている pane では、`npx expo ...` 実行中のタブを `Expo - SnowLog` のように表示します。
   - Expo タブでは、PowerShell profile が渡す起動時の作業ディレクトリ名を優先し、取れない場合だけ WezTerm の `current_working_dir` に fallback します。
-  - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` / `Expo` だけを表示します。
+  - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` / `Antigravity` / `Expo` だけを表示します。
+  - `AI_CLI` user var がない場合は、foreground process 名 (`codex.exe` / `claude.exe` / `agy.exe` など) でも AI CLI を判定します。agy はタイトルを設定しないため、この判定で wrapper を通らない起動も拾います。
   - 作業ディレクトリ名は 24 columns までに切り詰めます。
 - `format-window-title`
   - ウィンドウタイトルを `format-tab-title` と同じ名前にそろえ、複数タブのときは `[2/4]` のような位置を前に付けます。
@@ -136,18 +137,18 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - Codex 実行中だけ
     - `Enter` は通常の `Enter`
     - `Ctrl + Enter` は `F12`
-  - Claude 実行中だけ
-    - `Enter` は `Ctrl + J`
+  - Claude / Antigravity CLI 実行中だけ
+    - `Enter` / `Shift + Enter` は `Ctrl + J`
     - `Ctrl + Enter` は通常の `Enter`
   - Codex は `~/.codex/config.toml` の Codex TUI keymap で通常の `Enter` を newline、`F12` を submit にします。
-  - 最初に `pane:get_user_vars().AI_CLI` を確認し、`codex` / `claude` / `claude-code` なら AI CLI とみなします。
+  - 最初に `pane:get_user_vars().AI_CLI` を確認し、`codex` / `claude` / `claude-code` / `agy` なら AI CLI とみなします。
   - user var がない場合は `pane:get_foreground_process_info()` を使い、executable 名と argv を併用します。祖先は ppid を辿って最大 16 段まで調べます。
   - Codex と Claude Code は Node.js 製 npm CLI 経由で起動する場合があるため、Windows の `node.exe` 経由でも argv を見て検出できます。
   - プロセス情報の取得が一時的に失敗した場合は、直近 2 秒以内に確定した判定結果を pane 単位で再利用し、Enter / Ctrl+Enter の取り違えを防ぎます。
-  - Windows では PowerShell profile の `codex` / `claude` wrapper が、実行中だけ `AI_CLI` user var を設定します。
+  - Windows では PowerShell profile の `codex` / `claude` / `agy` wrapper が、実行中だけ `AI_CLI` user var を設定します。
   - Codex wrapper は、タブタイトルや foreground process が `node.exe` に寄らないよう、npm wrapper より同梱 native `codex.exe` を優先します。
   - Windows では PowerShell profile の `npx` wrapper が、`npx expo ...` 実行中だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を user var に設定します。
-  - SSH先のBashでは`~/.config/wezterm/wezterm-ai-cli.bash`が`codex` / `claude`をwrapし、同じ`AI_CLI` user varを通知します。
+  - SSH先のBashでは`~/.config/wezterm/wezterm-ai-cli.bash`が`codex` / `claude` / `agy`をwrapし、同じ`AI_CLI` user varを通知します。
   - tmux内ではDCS passthroughを使い、`allow-passthrough on`を前提とします。
 
 ### マウス
