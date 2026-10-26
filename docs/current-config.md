@@ -6,30 +6,8 @@
 
 ## ファイル構成
 
-- `wezterm.lua`
-  - 共通設定の入口です。
-  - `local.lua` が存在する場合は、そのテーブルを `config` に上書き適用します。
-  - event 登録、key binding、mouse binding、window / appearance 設定をまとめます。
-- `title.lua`
-  - タブタイトル整形を担当します。
-- `ai_cli.lua`
-  - Codex / Claude Code / Antigravity CLI (`agy`) の検出と Enter / Ctrl+Enter 変換を担当します。
-- `launcher.lua`
-  - OS ごとの launcher menu を生成します。
-- `clipboard.lua`
-  - `Ctrl + C` と右クリックのコピー/貼り付け補助を担当します。
-- `smart_paste.lua`
-  - クリップボード画像を一時 PNG に保存し、そのパスを貼り付けます。
-- `session.lua`
-  - 前回 session の tab / cwd だけを保存・復元します。
-- `local.lua`
-  - マシン依存の上書き用です。
-  - 現在は `default_cwd`、`initial_cols`、`initial_rows` を持てます。
-- `local.example.lua`
-  - `local.lua` の雛形です。
-
-WezTerm 公式 docs では複数ファイル構成自体はサポートされていますが、
-このリポジトリでは共通設定の入口、機能別 module、ローカル上書き、session 補助に分けています。
+ファイルごとの役割は [README.md](../README.md#ファイル構成) を参照してください。
+`local.lua` が存在する場合、`wezterm.lua` はそのテーブルの値で共通設定を上書きします。
 
 ## 現在の設定内容
 
@@ -53,11 +31,11 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - Expo タブでは、PowerShell profile が渡す起動時の作業ディレクトリ名を優先し、取れない場合だけ WezTerm の `current_working_dir` に fallback します。
   - 作業ディレクトリが取れない場合は `Codex` / `ClaudeCode` / `Antigravity` / `Expo` だけを表示します。
   - `AI_CLI` user var がない場合は、foreground process 名 (`codex.exe` / `claude.exe` / `agy.exe` など) でも AI CLI を判定します。agy はタイトルを設定しないため、この判定で wrapper を通らない起動も拾います。
+  - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex - <directory>` / `ClaudeCode - <directory>` に置き換えます。
+  - `TAB_CONTEXT` user var が設定されている pane では、Expo CLI 由来の `node.exe` や `C:\Windows\system32` 表示を `Expo - <directory>` に置き換えます。
   - 作業ディレクトリ名は 24 columns までに切り詰めます。
 - `format-window-title`
   - ウィンドウタイトルを `format-tab-title` と同じ名前にそろえ、複数タブのときは `[2/4]` のような位置を前に付けます。
-  - `AI_CLI` user var が設定されている pane では、npm wrapper 由来の `node.exe` 表示も `Codex - <directory>` / `ClaudeCode - <directory>` に置き換えます。
-  - `TAB_CONTEXT` user var が設定されている pane では、Expo CLI 由来の `node.exe` や `C:\Windows\system32` 表示を `Expo - <directory>` に置き換えます。
 - `gui-startup`
   - 保存済みの `session-state.json` があれば、前回の window / tab / cwd を復元します。
   - `wezterm start --cwd <path>` や `wezterm start -- <command>` のように明示起動条件がある場合は復元しません。
@@ -87,6 +65,7 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - タブバーの数値プレフィックスを無効化しています。
 - `window_close_confirmation = "NeverPrompt"`
   - ウィンドウ close ボタン経由では確認を出しません。
+  - タブの「×」ボタンは WezTerm 側で確認付きに固定されています。`skip_close_confirmation_for_processes_named` の既定リストにない process (AI CLI の `node.exe` など) が動いているタブでは確認が出ます。
 - `mux_enable_ssh_agent = false`
   - Windows では WezTerm による `SSH_AUTH_SOCK` 注入を止め、Windows OpenSSH の `ssh-agent` をそのまま使います。
 
@@ -145,11 +124,9 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
   - user var がない場合は `pane:get_foreground_process_info()` を使い、executable 名と argv を併用します。祖先は ppid を辿って最大 16 段まで調べます。
   - Codex と Claude Code は Node.js 製 npm CLI 経由で起動する場合があるため、Windows の `node.exe` 経由でも argv を見て検出できます。
   - プロセス情報の取得が一時的に失敗した場合は、直近 2 秒以内に確定した判定結果を pane 単位で再利用し、Enter / Ctrl+Enter の取り違えを防ぎます。
-  - Windows では PowerShell profile の `codex` / `claude` / `agy` wrapper が、実行中だけ `AI_CLI` user var を設定します。
-  - Codex wrapper は、タブタイトルや foreground process が `node.exe` に寄らないよう、npm wrapper より同梱 native `codex.exe` を優先します。
-  - Windows では PowerShell profile の `npx` wrapper が、`npx expo ...` 実行中だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を user var に設定します。
+  - Windows では PowerShell profile の `codex` / `claude` / `agy` wrapper が、実行中だけ `AI_CLI` user var を設定します。詳細は [powershell-integration.md](powershell-integration.md) を参照してください。
   - SSH先のBashでは`~/.config/wezterm/wezterm-ai-cli.bash`が`codex` / `claude` / `agy`をwrapし、同じ`AI_CLI` user varを通知します。
-  - tmux内ではDCS passthroughを使い、`allow-passthrough on`を前提とします。
+  - tmux内ではDCS passthroughを使い、`allow-passthrough on`を前提とします。詳細は [remote-ai-cli.md](remote-ai-cli.md) を参照してください。
 
 ### マウス
 
@@ -177,6 +154,7 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 ### 外観
 
 - `font_size = 10`
+  - `local.lua` 側で上書きしない場合の既定値です。
 - `window_background_opacity = 0.96`
 - `color_scheme = "Tokyo Night"`
 
@@ -184,8 +162,10 @@ WezTerm 公式 docs では複数ファイル構成自体はサポートされて
 
 - `local.lua` は Git 管理しない前提です。
 - 新しいマシンで使うときは `local.example.lua` をコピーして `local.lua` を作れば十分です。
-- 起動サイズをマシンごとに変えたい場合は `local.lua` の `initial_cols` / `initial_rows` を調整します。
+- 起動サイズや文字サイズをマシンごとに変えたい場合は `local.lua` の `initial_cols` / `initial_rows` / `font_size` を調整します。
 - 共有設定を増やす場合はまず `wezterm.lua` に書き、ローカル差分だけを `local.lua` に残します。
-- `codex` の Enter 入れ替えが効かない場合は、新しい WezTerm タブを開くか、既存 shell で `. $PROFILE` を実行してから CLI を起動し直します。
+- AI CLI の Enter 入れ替えやタブ名が効かない場合は、新しい WezTerm タブを開くか、既存 shell で `. $PROFILE` を実行してから CLI を起動し直します。
 - Codex のタブタイトルが `node.exe` になる場合は、古い shell で profile が再読み込みされていないか、native `codex.exe` が見つからず npm wrapper に fallback している可能性があります。
 - Codex の Enter 挙動は、WezTerm 側の Codex process 検出と `~/.codex/config.toml` の `[tui.keymap.editor]` / `[tui.keymap.composer]` を確認します。
+- agy のタブ名が `Antigravity - <directory>` にならない場合は、profile の `agy` wrapper が読み込まれているか (`Get-Command agy` が `Function` になるか) を確認します。
+- キー入力の扱いを調べるときは、一時的に `debug_key_events = true` にして GUI のログを確認します。ログにはすべてのキー入力が残るため、確認後は設定を外してログを消します。

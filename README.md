@@ -1,151 +1,57 @@
 # WezTerm Settings
 
-個人用の WezTerm 設定です。Windows と macOS の両方で同じ運用感になるように、次の方針で調整しています。
+個人用の WezTerm 設定です。Windows と macOS の両方で同じ運用感になるように調整しています。
 
-- タブタイトルを見やすくする
-- OS ごとの主要 shell を launcher から開けるようにする
-- 右クリックのコピー/ペースト挙動をシンプルにする
-- Codex 実行中だけ WezTerm 側で `Enter` 系の入力を入れ替える
-- Codex は Codex TUI 側の keymap と WezTerm 側の物理キー変換を組み合わせる
-- PowerShell profile から WezTerm pane に Codex / Claude / Antigravity CLI / Expo 実行状態を通知する
-- 前回終了前に開いていたタブと作業ディレクトリを復元する
-- ローカル環境依存の値は `local.lua` に逃がす
+## 主な機能
+
+- タブ名を見分けやすくする
+  - shell のタブは作業フォルダ名 (ホームは `~`)、SSH 中は `SSH` と表示します。
+  - Codex / Claude Code / Antigravity CLI / Expo の実行中は `Codex - wezterm` のようにツール名と作業フォルダ名を表示します。
+- AI CLI ごとに `Enter` 系のキーを入れ替える
+  - Codex: `Ctrl + Enter` を `F12` (Codex 側の keymap で送信) に変換します。
+  - Claude Code / Antigravity CLI: `Enter` と `Shift + Enter` を改行、`Ctrl + Enter` を送信にします。
+- タブ操作
+  - `Ctrl + ←/→` でタブ移動、`Ctrl + Shift + ←/→` でタブの並べ替えができます。
+  - `Ctrl + Shift + W` とウィンドウの閉じるボタンは確認なしで閉じます。
+- コピーと貼り付け
+  - 右クリックは選択があればコピー、なければ貼り付けです。
+  - `Ctrl + V` は、クリップボードが画像だけなら一時 PNG のパスを貼り付けます。
+- 前回開いていたタブと作業フォルダを、次回起動時に復元します。
+- `F3` の launcher から OS ごとの主要 shell (PowerShell / Command Prompt / WSL、macOS では login shell など) を開けます。
+
+設定と挙動の詳細は [docs/current-config.md](docs/current-config.md) にまとめています。
 
 ## ファイル構成
 
-- `wezterm.lua`
-  - 共通設定の入口
-  - 各モジュールを読み込み、イベント登録・キー設定・外観設定をまとめる
-- `ai_cli.lua`
-  - Codex / Claude Code / Antigravity CLI (`agy`) の検出と `Enter` 系キー変換
-- `clipboard.lua`
-  - `Ctrl + C` と右クリックのコピー/貼り付け補助
-- `smart_paste.lua`
-  - クリップボード画像を一時 PNG として保存し、そのパスを貼り付け
-- `launcher.lua`
-  - OS ごとの launcher menu 生成
-- `title.lua`
-  - タブタイトル整形
-- `session.lua`
-  - 前回 session の tab / cwd 保存と復元
-- `shell/wezterm-ai-cli.bash`
-  - SSH先のBashからCodex / Claude Code / Antigravity CLI実行状態を通知
-- `local.lua`
-  - ローカル環境専用の上書き
-  - Git 管理対象外
-- `local.example.lua`
-  - `local.lua` の雛形
-- `docs/`
-  - 設定の説明、公式参照先、網羅 reference
-
-## 現在の主な設定
-
-- Windows では既定シェルを `pwsh.exe -NoLogo` に固定
-- macOS では WezTerm 既定の login shell をそのまま使用
-- 起動サイズは `local.lua` の `initial_cols` / `initial_rows` で環境ごとに上書き可能
-- `Ctrl + LeftArrow` / `Ctrl + RightArrow` でタブ移動
-- `Ctrl + Shift + LeftArrow` / `Ctrl + Shift + RightArrow` で現在のタブを左右へ並べ替え
-- `F3` で launcher を表示
-- Windows の launcher では PowerShell / Command Prompt / WSL を表示
-- macOS の launcher では login shell と標準 shell を表示
-- 右クリックは「選択があればコピー、なければ貼り付け」
-- `Ctrl + V` (macOS では `Cmd + V` も) はクリップボードが画像だけなら一時 PNG のパスを貼り付け
-- ウィンドウ close ボタンは確認なし
-- `Ctrl + Shift + W` でのタブ close も確認なし
-- Windows では WezTerm の `SSH_AUTH_SOCK` 注入を止め、OpenSSH の `ssh-agent` を使用
-- 15 秒ごとに tab / cwd の軽量 snapshot を config dir 外の `session-state.json` に保存
-- 次回 GUI 起動時に前回 snapshot から tab と cwd だけを復元
-- shell のタブは作業ディレクトリの末尾フォルダ名 (ホームは `~`)、SSH 実行中は `SSH` と表示し、Codex / Claude Code / Antigravity CLI / Expo は `Codex - wezterm` のようにツール名と作業ディレクトリ名を表示
-- `AI_CLI` user var、または `codex` 系 process が検出できるときだけ
-- Codex 実行中は
-  - `Enter` を通常の `Enter`
-  - `Ctrl + Enter` を `F12`
-- Claude / Antigravity CLI 実行中は
-  - `Enter` / `Shift + Enter` を `Ctrl + J` (改行)
-  - `Ctrl + Enter` を通常の `Enter` (送信)
-- Codex は `~/.codex/config.toml` の native keymap で
-  - 通常の `Enter` を newline
-  - `F12` を submit
-
-## `wezterm.lua` の読み方
-
-`wezterm.lua` は、共通設定の入口です。個別の判断や補助処理は Lua module に分け、設定本体では「何を有効化しているか」が追いやすい形にしています。
-
-- `local.lua` の読み込み
-  - `local.lua` が存在する場合だけ読み込み、共通設定をローカル値で上書きします。
-- `title.lua`
-  - shell 名など、タブ名として情報量が低いものは作業ディレクトリの末尾フォルダ名に置き換えます。ホームディレクトリは `~`、取れない場合は `Terminal` です。
-  - Store 版 pwsh のようにタイトルが実行ファイルのフルパスでも、ファイル名で判定します。
-  - foreground process が `ssh` の間は、ローカルの cwd ではなく `SSH` と表示します。
-  - ウィンドウタイトル (Alt+Tab / タスクバー) もタブ名にそろえます。
-  - Codex / Claude Code / Antigravity CLI は、認識できる場合は `Codex - wezterm` / `ClaudeCode - SnowLog` / `Antigravity - SnowLog` のように CLI 名と作業ディレクトリ名を表示します。
-  - `AI_CLI` user var がない場合も、foreground process が `codex` / `claude` / `agy` ならその CLI として表示します。
-  - `npx expo ...` は、PowerShell profile から `TAB_CONTEXT` と起動時の作業ディレクトリ名が設定される場合に `Expo - SnowLog` のように表示します。
-  - 作業ディレクトリが取れない場合は、`Codex` / `ClaudeCode` / `Antigravity` だけを表示します。
-  - Codex が npm 経由で `node.exe` と表示される場合も、`AI_CLI` user var があれば `Codex - <directory>` と表示します。
-- `session.lua`
-  - `session.lua` が 15 秒ごとに現在の window / tab / cwd を config dir 外の `session-state.json` に保存します。
-  - WezTerm の GUI 起動時に、保存されていた cwd ごとに shell tab を開き直します。
-  - 実行中コマンド、pane 分割、scrollback、SSH 接続は復元しません。
-- `launcher.lua`
-  - Windows 用の PowerShell / Command Prompt / WSL 候補を作ります。
-  - macOS / Linux 用の login shell 候補を作ります。
-- `clipboard.lua`
-  - `Ctrl + C` は選択中ならコピー、未選択なら割り込みとして送信します。
-  - 右クリックは選択中ならコピー、未選択なら貼り付けです。
-- `smart_paste.lua`
-  - クリップボードにテキストがなく画像だけある場合、PNG に保存してパスを bracketed paste で送ります。Claude Code などに画像を渡せます。
-  - Windows では `%TEMP%\wezterm-clipboard-images`、macOS では `/tmp/wezterm-clipboard-images` に保存します。
-  - Windows の `%TEMP%` はシャットダウンで消えないため、GUI 起動時に現在のログオンより前の画像をバックグラウンドで削除します。
-  - WSL pane には `/mnt/c/...` 形式のパスを渡します。
-  - 判定のため貼り付けごとに PowerShell / `osascript` を起動するので、数百 ms の遅延があります。
-- `ai_cli.lua`
-  - PowerShell profile の `codex` / `claude` / `agy` wrapper が `AI_CLI` user var を設定している場合は、それを最優先します。
-  - user var がない場合は、`codex` / `claude` / `claude-code` / `agy` の foreground process を見て、CLI 種別を判定します。
-  - Claude Code と Antigravity CLI は同じ Enter 入れ替えを使います。
-  - Codex と Claude Code は Node.js 経由で起動する場合があるため、実行ファイル名だけでなく argv も確認します。
-- OS 別設定
-  - Windows では WSL domain、OpenSSH agent、PowerShell 7 既定起動を明示します。
-  - macOS では WezTerm 既定の login shell を尊重します。
+| パス | 役割 |
+| --- | --- |
+| `wezterm.lua` | 設定の入口。各 module を読み込み、イベント・キー・マウス・ウィンドウ・外観を設定します。 |
+| `ai_cli.lua` | AI CLI の検出と `Enter` 系キー変換 |
+| `title.lua` | タブ名とウィンドウタイトルの整形 |
+| `session.lua` | tab と cwd の保存・復元 |
+| `launcher.lua` | OS ごとの launcher menu 生成 |
+| `clipboard.lua` | `Ctrl + C` と右クリックのコピー/貼り付け |
+| `smart_paste.lua` | クリップボード画像をパスとして貼り付け |
+| `local.lua` | マシンごとの上書き (Git 管理外) |
+| `local.example.lua` | `local.lua` の雛形 |
+| `shell/wezterm-ai-cli.bash` | SSH 先の Bash から AI CLI の実行状態を通知 |
+| `docs/` | 設定の詳細、連携手順、公式リンク、設定項目の reference |
+| `AGENTS.md` | コーディングエージェント向けの指示 (Codex が直接読み、`.claude/CLAUDE.md` が取り込みます) |
 
 ## セットアップ
 
-1. `local.example.lua` を `local.lua` としてコピーする
-2. 必要なら `default_cwd`、`initial_cols`、`initial_rows` などをローカル環境に合わせて変更する
-3. PowerShell profile を読み込み直すか、新しいタブを開く
-4. WezTerm を再読み込みする
+1. `local.example.lua` を `local.lua` としてコピーし、`default_cwd`、`initial_cols`、`initial_rows`、`font_size` などをマシンに合わせて変更します。
+2. Windows では、PowerShell profile に AI CLI 用の wrapper を入れます。手順は [docs/powershell-integration.md](docs/powershell-integration.md) を参照してください。
+3. Codex を使う場合は、`~/.codex/config.toml` の keymap で通常の `Enter` を改行、`F12` を送信にします。
+4. SSH 先で AI CLI を使う場合は、[docs/remote-ai-cli.md](docs/remote-ai-cli.md) の手順で `shell/wezterm-ai-cli.bash` を読み込みます。
 
-## PowerShell 連携
+`automatically_reload_config` を有効にしているので、設定ファイルを保存すると開いているウィンドウにすぐ反映されます。
 
-`C:\Users\kmch4n\OneDrive - 同志社大学\Document\PowerShell\Microsoft.PowerShell_profile.ps1` では、`codex` / `claude` / `agy` 実行時だけ `AI_CLI` user var を WezTerm pane に設定します。
-また、`npx expo ...` 実行時だけ `TAB_CONTEXT=expo` と起動時の作業ディレクトリ名を設定します。
+## ドキュメント
 
-これにより、Windows ConPTY が foreground process を `pwsh.exe` として返す場合でも、WezTerm 側は AI CLI 実行中だと判定できます。
-Codex は npm の `codex.ps1` 経由だと foreground が `node.exe` になることがあるため、profile wrapper では同梱 native `codex.exe` を優先して起動します。
-Expo は npm / npx 経由だと foreground や pane title が `node.exe` や `C:\Windows\system32` に寄ることがあるため、`TAB_CONTEXT` と起動時の作業ディレクトリ名を優先してタブ名を決めます。
-
-既に開いている shell では、次のどちらかが必要です。
-
-- 新しい WezTerm タブを開く
-- 既存 shell で `. $PROFILE` を実行してから `codex` / `claude` / `agy` を起動し直す
-
-## SSH / tmux 連携
-
-SSH先ではローカルWezTermからremote processを直接検出できないため、
-`shell/wezterm-ai-cli.bash`から`AI_CLI` user varを通知します。
-
-Ubuntu / Bashへの導入方法とtmuxの`allow-passthrough`設定は
-[docs/remote-ai-cli.md](docs/remote-ai-cli.md)を参照してください。
-
-## Docs
-
-- [docs/README.md](docs/README.md)
-  - docs 全体の入口
-- [docs/current-config.md](docs/current-config.md)
-  - 現在有効な設定の要約
-- [docs/official-reference.md](docs/official-reference.md)
-  - 公式ドキュメントへの導線
-- [docs/remote-ai-cli.md](docs/remote-ai-cli.md)
-  - SSH / tmux内のCodex・Claude Code連携
-- [docs/reference/README.md](docs/reference/README.md)
-  - 設定項目の厚い reference
+- [docs/README.md](docs/README.md): docs 全体の入口
+- [docs/current-config.md](docs/current-config.md): 現在有効な設定と挙動
+- [docs/powershell-integration.md](docs/powershell-integration.md): Windows の PowerShell profile 連携
+- [docs/remote-ai-cli.md](docs/remote-ai-cli.md): SSH / tmux 内の AI CLI 連携
+- [docs/official-reference.md](docs/official-reference.md): 公式ドキュメントへのリンク集
+- [docs/reference/README.md](docs/reference/README.md): WezTerm 設定項目の reference

@@ -1,7 +1,7 @@
 # Official Reference
 
 このファイルは、現行設定の正当性確認と、ローカル reference 作成時の一次情報確認に使った
-WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日は 2026-05-07 です。
+WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日は 2026-10-27 です。
 
 ローカル reference のカバー範囲は次のとおりです。
 
@@ -33,6 +33,9 @@ WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日�
 - `format-tab-title`
   - <https://wezterm.org/config/lua/window-events/format-tab-title.html>
   - タブタイトルを動的に整形できること、同期イベントであることを確認できます。
+- `format-window-title`
+  - <https://wezterm.org/config/lua/window-events/format-window-title.html>
+  - ウィンドウタイトル (Alt+Tab / タスクバー) を整形できることを確認できます。
 - User Vars
   - <https://wezterm.org/recipes/passing-data.html>
   - pane 内のアプリケーションから OSC 1337 `SetUserVar` escape sequence で WezTerm の Lua 設定へ状態を渡せることを確認できます。
@@ -42,7 +45,7 @@ WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日�
   - pane に設定された user var を Lua 側で読み取れることを確認できます。
 - `PaneInformation`
   - <https://wezterm.org/config/lua/PaneInformation.html>
-  - `format-tab-title` に渡される active pane snapshot から `title`、`user_vars`、`current_working_dir` を読めることを確認できます。
+  - `format-tab-title` に渡される active pane snapshot から `title`、`user_vars`、`current_working_dir`、`foreground_process_name` を読めることを確認できます。
 - `pane:get_current_working_dir()`
   - <https://wezterm.org/config/lua/pane/get_current_working_dir.html>
   - current working directory が URI string または Url object として返り、取得できない場合は `nil` になることを確認できます。
@@ -78,6 +81,24 @@ WezTerm / Codex 公式ドキュメントのリンク集です。最終確認日�
   - <https://wezterm.org/config/lua/wezterm/json_encode.html>
   - <https://wezterm.org/config/lua/wezterm/json_parse.html>
   - Lua table を JSON 保存し、起動時に読み戻せることを確認できます。
+
+## キー操作とタブ
+
+- `ActivateTabRelative`
+  - <https://wezterm.org/config/lua/keyassignment/ActivateTabRelative.html>
+  - `Ctrl + ←/→` のタブ移動に使っています。
+- `MoveTabRelative`
+  - <https://wezterm.org/config/lua/keyassignment/MoveTabRelative.html>
+  - `Ctrl + Shift + ←/→` のタブ並べ替えに使っています。
+- `window_close_confirmation`
+  - <https://wezterm.org/config/lua/config/window_close_confirmation.html>
+  - ウィンドウを閉じるときの確認を `NeverPrompt` で無効化できることを確認できます。
+- `skip_close_confirmation_for_processes_named`
+  - <https://wezterm.org/config/lua/config/skip_close_confirmation_for_processes_named.html>
+  - タブの「×」ボタンで確認が出るかどうかは、この process 名リストで決まることを確認できます。
+- `debug_key_events`
+  - <https://wezterm.org/config/lua/config/debug_key_events.html>
+  - キー入力が WezTerm にどう届き、どの action に割り当てられたかをログで確認できます。
 
 ## 現在使っている主要設定
 

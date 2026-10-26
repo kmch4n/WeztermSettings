@@ -17,6 +17,9 @@
 - `official-reference.md`
   - 現行設定の正当性確認に使った公式リンク集です。
   - 変更前に一次情報へ飛ぶための入口です。
+- `powershell-integration.md`
+  - Windows の PowerShell profile から AI CLI / Expo の実行状態を通知する wrapper の控えと説明です。
+  - profile 本体はリポジトリ外にあるため、新しいマシンではここから再現します。
 - `remote-ai-cli.md`
   - SSH / tmux内のCodex・Claude Code・Antigravity CLIを認識させるremote Bash設定です。
 - `reference/README.md`
@@ -25,32 +28,17 @@
 
 ## 設定ファイルの構成
 
-- `wezterm.lua`
-  - 共通設定の入口です。
-  - event 登録、起動設定、ウィンドウ、外観、既定キーバインドを持ちます。
-- `title.lua`
-  - タブタイトル整形を担当します。
-- `ai_cli.lua`
-  - Codex / Claude Code / Antigravity CLI の検出と `Enter` 系キー変換を担当します。
-- `launcher.lua`
-  - OS ごとの launcher menu を生成します。
-- `clipboard.lua`
-  - コピー/貼り付け系の補助操作を担当します。
-- `smart_paste.lua`
-  - クリップボード画像をパスとして貼り付ける処理を担当します。
-- `session.lua`
-  - 前回 session の tab / cwd 保存と復元を担当します。
-- `local.lua`
-  - ローカル環境専用の上書きです。
-  - Git 管理の対象外です。
-- `local.example.lua`
-  - `local.lua` の雛形です。
+ファイルごとの役割は [../README.md](../README.md#ファイル構成) にまとめています。
 
 ## docs の設計方針
 
 - 現在有効な設定は `current-config.md` に集約する
+- README は概要・ファイル構成・セットアップの入口に留め、詳細を重複させない
+- shell 側の連携 (PowerShell / remote Bash) は専用ファイルに分ける
 - 正当性確認に使う一次情報は `official-reference.md` に集約する
 - WezTerm の設定項目を広く引けるように `reference/` に厚い catalog を置く
 - 公式 docs の全文コピーはしない
 
-この構成により、「今の設定を知る」「新しい設定を探す」「公式根拠を確認する」を分離しています。
+この構成により、「今の設定を知る」「連携を再現する」「新しい設定を探す」「公式根拠を確認する」を分離しています。
+
+コーディングエージェント向けの指示はリポジトリ直下の `AGENTS.md` にあり、どの変更でどの docs を更新するかもそこに書いています。
